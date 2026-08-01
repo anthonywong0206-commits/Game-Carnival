@@ -121,7 +121,14 @@
   function render() {
     currentRoute = getRoute();
     document.body.dataset.view = currentRoute;
-    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const groups = { wheel: ['wheel','wheelsettings'], quiz: ['quiz','quizsettings'], tvplay: ['tv','tvplay'] }; const active = route === currentRoute || (groups[route] || []).includes(currentRoute); button.classList.toggle('is-active', active); });
+    document.querySelectorAll('[data-route]').forEach((button) => {
+      const route = button.dataset.route;
+      const groups = { wheel: ['wheel','wheelsettings'], quiz: ['quiz','quizsettings'], tvplay: ['tv','tvplay'] };
+      const isShortcut = button.classList.contains('shortcut-button');
+      const active = isShortcut ? route === currentRoute : route === currentRoute || (groups[route] || []).includes(currentRoute);
+      button.classList.toggle('is-active', active);
+      if (isShortcut) button.setAttribute('aria-current', active ? 'page' : 'false');
+    });
     mobileNav.classList.remove('is-open');
     menuButton.setAttribute('aria-expanded', 'false');
     clearQuizTimer();
@@ -683,13 +690,13 @@
 
   function bindRouteActions() {
     document.querySelectorAll('[data-route]').forEach((button) => {
-      button.addEventListener('click', () => {
+      button.onclick = () => {
         if (button.dataset.prepareTv === 'true') {
           try { prepareBigTvGame(false); } catch (error) { console.warn('Unable to persist game preparation', error); }
         }
         if (button.dataset.route === 'quiz') ensureQuizSession(true);
         setRoute(button.dataset.route);
-      });
+      };
     });
   }
 
