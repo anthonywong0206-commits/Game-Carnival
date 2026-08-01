@@ -120,7 +120,8 @@
 
   function render() {
     currentRoute = getRoute();
-    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const active = route === currentRoute || (route === 'tv' && currentRoute === 'tvplay'); button.classList.toggle('is-active', active); });
+    document.body.dataset.view = currentRoute;
+    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const active = route === currentRoute || (route === 'tvplay' && (currentRoute === 'tv' || currentRoute === 'tvplay')) || (route === 'tv' && currentRoute === 'tvplay'); button.classList.toggle('is-active', active); });
     mobileNav.classList.remove('is-open');
     menuButton.setAttribute('aria-expanded', 'false');
     clearQuizTimer();
@@ -198,7 +199,7 @@
                   <div class="tv-card-scoreboard">${renderBigTvTeamStrip()}</div>
                 </div>
               </div>
-              <div class="card-actions"><button class="btn btn-dark" data-route="tv">▶ 進入</button><button class="btn btn-ghost" data-route="tv">⚙ 設定</button></div>
+              <div class="card-actions"><button class="btn btn-dark" data-route="tvplay" data-prepare-tv="true">▶ 進入遊戲</button><button class="btn btn-ghost" data-route="tv">⚙ 設定</button></div>
             </article>
           </div>
         </section>
@@ -432,7 +433,7 @@
               ${renderChoiceRow('每題時間', 'tv-seconds', [['15 秒',15],['20 秒',20],['30 秒',30],['45 秒',45]], state.bigTvSettings.secondsPerRound)}
               <div class="form-grid two"><div class="field"><label for="tvPointsPerCorrect">每題分數</label><input class="input" id="tvPointsPerCorrect" type="number" min="10" step="10" value="${state.bigTvSettings.pointsPerCorrect}"></div><div class="field"><label for="tvRounds">回合數</label><input class="input" id="tvRounds" type="number" min="1" max="50" value="${state.bigTvSettings.rounds}"></div></div>
               <label class="switch-row"><span><strong>分割畫面模式</strong><small>同時顯示各隊得分與狀態</small></span><input type="checkbox" id="tvSplitScreen" ${state.bigTvSettings.splitScreen ? 'checked' : ''}></label>
-              <div class="card-actions"><button class="btn btn-blue" id="previewTvPlay">預覽大螢幕</button><button class="btn btn-primary" id="startTvGame">開始遊戲</button></div>
+              <div class="card-actions"><button class="btn btn-blue" id="previewTvPlay">進入遊戲畫面</button><button class="btn btn-primary" id="startTvGame">直接開始遊戲</button></div>
             </div>
           </aside>
         </div>
@@ -489,7 +490,7 @@
     const leader = getBigTvLeader();
     const totalRounds = Math.max(1, Math.min(state.bigTvSettings.rounds, queue.length || 1));
     return `
-      <div class="tv-play-page">
+      <div class="tv-play-page ${state.bigTvSettings.splitScreen ? 'has-scores' : 'no-scores'}">
         <div class="tv-play-header">
           <div class="tv-play-brand">大電視<span>即時競答・動作猜估</span></div>
           <div class="tv-play-topline"><span>第 ${Math.min(game.roundIndex + 1, totalRounds)} 回合 / 共 ${totalRounds} 回合</span><span class="big-timer">${String(game.secondsLeft).padStart(2, '0')}</span><span>類別：${escapeHtml(question ? getBigTvCategoryName(question.categoryId) : getBigTvCategoryName(state.bigTvSettings.selectedCategoryId))}</span></div>
@@ -513,7 +514,7 @@
             <button class="btn btn-ghost btn-wide" id="tvSkipPrompt">跳過</button>
             <button class="btn btn-dark btn-wide" id="tvRevealAnswer">${game.showAnswer ? '隱藏答案提示' : '顯示答案提示'}</button>
             <button class="btn btn-ghost btn-wide" id="tvPauseGame">${game.paused ? '已暫停' : '暫停'}</button>
-            <button class="btn btn-ghost btn-wide" id="tvBackToSetup">返回設定頁</button>
+            <button class="btn btn-ghost btn-wide" id="tvBackToSetup">⚙ 返回設定頁</button>
             <label class="switch-row"><span><strong>分割畫面模式</strong><small>同步顯示隊伍分數</small></span><input type="checkbox" id="tvSplitPlay" ${state.bigTvSettings.splitScreen ? 'checked' : ''}></label>
           </aside>
         </div>
@@ -604,7 +605,12 @@
 
   function bindRouteActions() {
     document.querySelectorAll('[data-route]').forEach((button) => {
-      button.addEventListener('click', () => setRoute(button.dataset.route));
+      button.addEventListener('click', () => {
+        if (button.dataset.prepareTv === 'true') {
+          try { prepareBigTvGame(false); } catch (error) { console.warn('Unable to persist game preparation', error); }
+        }
+        setRoute(button.dataset.route);
+      });
     });
   }
 

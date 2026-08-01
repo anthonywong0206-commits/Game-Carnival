@@ -732,3 +732,166 @@ td { font-size: 14px; }
   .tv-play-topline { grid-template-columns: 1fr; text-align: center; }
   .tv-question-prompt { font-size: 64px; }
 }
+
+/* v4 page behavior: vertical-scroll content pages, fixed full-screen game page. */
+html, body { max-width: 100%; overflow-x: hidden; }
+#viewRoot { max-width: 100%; }
+.page, .panel-page, .tv-play-page { max-width: calc(100% - 20px); }
+
+@media (min-width: 981px) {
+  body[data-view="home"],
+  body[data-view="tv"] {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body[data-view="home"] .app-shell,
+  body[data-view="tv"] .app-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  body[data-view="home"] #viewRoot,
+  body[data-view="tv"] #viewRoot {
+    height: auto;
+    min-height: calc(100vh - var(--header-h));
+    overflow: visible;
+  }
+
+  body[data-view="home"] .page {
+    width: min(1320px, calc(100% - 32px));
+    height: auto;
+    min-height: 0;
+    display: block;
+    overflow: visible;
+    padding: 22px 0 54px;
+  }
+
+  body[data-view="home"] .hero {
+    min-height: 300px;
+    height: auto;
+    padding: 42px 52px;
+    border-radius: 32px;
+  }
+  body[data-view="home"] .hero-grid { min-height: 220px; grid-template-columns: 1.25fr .75fr; gap: 28px; }
+  body[data-view="home"] .hero h1 { font-size: clamp(48px, 6vw, 76px); margin: 8px 0 14px; }
+  body[data-view="home"] .hero p { font-size: clamp(15px, 1.6vw, 20px); line-height: 1.65; }
+  body[data-view="home"] .hero-actions { margin-top: 22px; }
+  body[data-view="home"] .hero-actions .btn { min-height: 46px; padding-inline: 20px; font-size: 15px; }
+  body[data-view="home"] .hero-visual { min-height: 220px; }
+  body[data-view="home"] .ringmaster { width: min(250px, 21vw); font-size: clamp(90px, 11vw, 140px); }
+  body[data-view="home"] .ferris { width: 140px; height: 140px; bottom: -24px; }
+  body[data-view="home"] .section { margin-top: 28px; overflow: visible; display: block; }
+  body[data-view="home"] .section-heading { margin: 0 2px 14px; }
+  body[data-view="home"] .section-heading h2 { font-size: clamp(25px, 3vw, 34px); }
+  body[data-view="home"] .section-heading p { font-size: 14px; }
+  body[data-view="home"] .tool-grid { height: auto; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  body[data-view="home"] .tool-card { padding: 18px; border-radius: 26px; display: grid; grid-template-rows: auto auto auto; }
+  body[data-view="home"] .card-title-row { margin-bottom: 13px; }
+  body[data-view="home"] .number-badge { width: 40px; height: 40px; font-size: 18px; }
+  body[data-view="home"] .card-title h3 { font-size: 22px; }
+  body[data-view="home"] .card-title p { font-size: 13px; }
+  body[data-view="home"] .tag { padding: 6px 9px; font-size: 11px; }
+  body[data-view="home"] .preview-stage { min-height: 300px; height: auto; padding: 15px; border-radius: 20px; }
+  body[data-view="home"] .mini-wheel { width: min(220px, 100%); }
+  body[data-view="home"] .condition-board { padding: 12px; }
+  body[data-view="home"] .condition-board strong { font-size: 14px; }
+  body[data-view="home"] .condition-board span { font-size: 11px; padding: 5px 0; }
+  body[data-view="home"] .quiz-preview { min-height: 270px; }
+  body[data-view="home"] .quiz-toolbar { font-size: 13px; }
+  body[data-view="home"] .quiz-preview-panel { padding: 18px; }
+  body[data-view="home"] .quiz-preview-panel h4 { font-size: 17px; }
+  body[data-view="home"] .answer-chip { font-size: 13px; padding: 10px; }
+  body[data-view="home"] .card-actions { margin-top: 14px; }
+  body[data-view="home"] .card-actions .btn { min-height: 42px; font-size: 14px; }
+  body[data-view="home"] .quick-tools { height: auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; }
+  body[data-view="home"] .quick-card { min-height: 150px; padding: 18px; border-radius: 20px; display: block; }
+  body[data-view="home"] .quick-card .quick-icon { width: 52px; height: 52px; font-size: 27px; }
+  body[data-view="home"] .quick-card h3 { margin: 13px 0 5px; font-size: 17px; }
+  body[data-view="home"] .quick-card p { font-size: 13px; line-height: 1.5; }
+  body[data-view="home"] .quick-card .tags { margin-top: 12px !important; }
+
+  body[data-view="tv"] .panel-page {
+    width: min(1320px, calc(100% - 32px));
+    height: auto;
+    min-height: 0;
+    display: block;
+    overflow: visible;
+    padding: 20px 0 54px;
+  }
+  body[data-view="tv"] .tv-marquee-hero { min-height: 250px; }
+  body[data-view="tv"] .tv-top-grid,
+  body[data-view="tv"] .tv-management-grid { margin-top: 22px; }
+  body[data-view="tv"] .panel,
+  body[data-view="tv"] .panel-body { overflow: visible; }
+  body[data-view="tv"] .panel-header { padding: 18px 20px; }
+  body[data-view="tv"] .panel-body { padding: 20px; }
+  body[data-view="tv"] .tv-import-manager .textarea { min-height: 210px; max-height: none; resize: vertical; }
+  body[data-view="tv"] .dropzone { padding: 28px; }
+  body[data-view="tv"] .tv-category-row,
+  body[data-view="tv"] .tv-question-row { min-height: 68px; }
+
+  body[data-view="tvplay"] {
+    height: 100%;
+    overflow: hidden;
+  }
+  body[data-view="tvplay"] .app-shell { height: 100dvh; overflow: hidden; }
+  body[data-view="tvplay"] #viewRoot { height: calc(100dvh - var(--header-h)); overflow: hidden; }
+  body[data-view="tvplay"] .tv-play-page {
+    width: min(1360px, calc(100% - 16px));
+    max-width: calc(100% - 16px);
+    height: 100%;
+    padding: 8px 0;
+    display: grid;
+    grid-template-rows: 68px minmax(0, 1fr) 126px 38px;
+    gap: 8px;
+    overflow: hidden;
+  }
+  body[data-view="tvplay"] .tv-play-header { margin: 0; padding: 9px 16px; border-radius: 18px; overflow: hidden; }
+  body[data-view="tvplay"] .tv-play-brand { font-size: 27px; line-height: 1; }
+  body[data-view="tvplay"] .tv-play-brand span { font-size: 13px; }
+  body[data-view="tvplay"] .tv-play-topline { margin-top: 5px; font-size: 14px; }
+  body[data-view="tvplay"] .big-timer { font-size: 29px; min-width: 70px; line-height: 1; }
+  body[data-view="tvplay"] .tv-play-layout { min-height: 0; height: 100%; grid-template-columns: minmax(0, 1fr) 235px; gap: 9px; }
+  body[data-view="tvplay"] .tv-main-screen { min-height: 0; height: 100%; padding: 10px; border-width: 4px; border-radius: 20px; overflow: hidden; }
+  body[data-view="tvplay"] .tv-live-banner { font-size: 16px; }
+  body[data-view="tvplay"] .tv-question-screen { min-height: 0; height: calc(100% - 28px); }
+  body[data-view="tvplay"] .tv-question-screen-inner { max-height: 100%; padding: 14px 18px; border-radius: 18px; }
+  body[data-view="tvplay"] .tv-question-tag { padding: 6px 12px; font-size: 12px; }
+  body[data-view="tvplay"] .tv-question-prompt { margin: 12px 0 9px; font-size: clamp(48px, 8vh, 82px); }
+  body[data-view="tvplay"] .tv-question-rule { font-size: 17px; }
+  body[data-view="tvplay"] .tv-host-panel { padding: 10px; border-radius: 18px; gap: 6px; overflow: hidden; }
+  body[data-view="tvplay"] .tv-host-panel h3 { margin: 0; font-size: 18px; }
+  body[data-view="tvplay"] .tv-host-panel .btn { min-height: 31px; padding: 0 9px; font-size: 11px; border-radius: 9px; }
+  body[data-view="tvplay"] .tv-host-panel .switch-row { padding: 7px 9px; border-radius: 10px; }
+  body[data-view="tvplay"] .tv-host-panel .switch-row strong { font-size: 11px; }
+  body[data-view="tvplay"] .tv-host-panel .switch-row small { font-size: 8px; }
+  body[data-view="tvplay"] .tv-live-scores { min-height: 0; height: 126px; margin: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  body[data-view="tvplay"] .tv-team-card { min-width: 0; padding: 9px 11px; border-radius: 16px; overflow: hidden; }
+  body[data-view="tvplay"] .tv-team-card-head { font-size: 14px; gap: 7px; }
+  body[data-view="tvplay"] .tv-team-avatar { width: 31px; height: 31px; font-size: 18px; }
+  body[data-view="tvplay"] .tv-team-score { margin-top: 5px; font-size: 34px; }
+  body[data-view="tvplay"] .tv-team-score small { font-size: 12px; }
+  body[data-view="tvplay"] .tv-team-status { margin-top: 4px; padding: 4px 7px; border-radius: 8px; font-size: 10px; }
+  body[data-view="tvplay"] .tv-team-meta { margin-top: 3px; font-size: 9px; }
+  body[data-view="tvplay"] .tv-play-footer { min-height: 0; margin: 0; padding: 7px 12px; border-radius: 12px; font-size: 11px; align-items: center; overflow: hidden; }
+}
+
+@media (min-width: 981px) and (max-width: 1180px) {
+  body[data-view="home"] .tool-grid { grid-template-columns: 1fr 1fr; }
+  body[data-view="home"] .quick-tools { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 980px) {
+  body { overflow-x: hidden; overflow-y: auto; }
+  .app-shell, #viewRoot { min-width: 0; max-width: 100%; overflow-x: hidden; }
+  .page, .panel-page, .tv-play-page { width: calc(100% - 20px); max-width: calc(100% - 20px); }
+  .tool-grid, .tv-top-grid, .tv-management-grid, .tv-play-layout { grid-template-columns: 1fr; }
+  .tv-live-scores { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 981px) {
+  body[data-view="tvplay"] .tv-play-page.no-scores { grid-template-rows: 68px minmax(0, 1fr) 0 38px; }
+}
