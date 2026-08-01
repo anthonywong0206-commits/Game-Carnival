@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b1238" />
+  <meta name="description" content="小組活動綜合平台：抽獎輪盤、多項選擇遊戲及題庫匯入工具。" />
+  <title>小組活動綜合平台</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <button class="brand" data-route="home" aria-label="返回首頁">
+        <span class="brand-mascot" aria-hidden="true">🎪</span>
+        <span>小組活動綜合平台</span>
+      </button>
+      <nav class="desktop-nav" aria-label="主要導覽">
+        <button class="nav-link is-active" data-route="home">首頁</button>
+        <button class="nav-link" data-route="wheel">抽獎輪盤</button>
+        <button class="nav-link" data-route="quiz">多項選擇</button>
+        <button class="nav-link" data-route="bank">題庫管理</button>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-button" id="soundToggle" aria-label="切換音效" title="音效">
+          <span aria-hidden="true">🔊</span>
+        </button>
+        <button class="profile-button" type="button">
+          <span class="avatar">🐶</span>
+          <span class="profile-copy"><small>歡迎回來</small><strong>小組隊長</strong></span>
+        </button>
+        <button class="menu-button" id="menuButton" aria-label="開啟選單" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <nav class="mobile-nav" id="mobileNav" aria-label="手機導覽">
+      <button data-route="home">首頁</button>
+      <button data-route="wheel">抽獎輪盤</button>
+      <button data-route="quiz">多項選擇</button>
+      <button data-route="bank">題庫管理</button>
+    </nav>
+
+    <main id="viewRoot" tabindex="-1"></main>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <div class="modal-layer" id="modalLayer" aria-live="polite"></div>
+</body>
+</html>
