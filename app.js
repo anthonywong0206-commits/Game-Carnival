@@ -297,41 +297,53 @@
       </div>`;
   }
 
+  function renderHomeTile(game) {
+    const available = Boolean(game.playRoute);
+    const selected = game.id === selectedHomeGame;
+    return `
+      <article class="ps-game-tile ${game.tone} ${selected ? 'is-selected' : ''}" data-home-game-card="${game.id}">
+        <button class="ps-game-select" type="button" data-home-game="${game.id}" aria-pressed="${selected}">
+          <span class="ps-game-art"><span class="ps-game-art-icon">${game.icon}</span><span class="ps-game-art-glow"></span></span>
+          <span class="ps-game-name">${game.title}</span>
+          <span class="ps-game-subtitle">${game.subtitle}</span>
+        </button>
+        <div class="ps-game-actions" aria-hidden="${!selected}">
+          ${available ? `<button class="ps-action-card primary" data-route="${game.playRoute}" ${game.prepareTv ? 'data-prepare-tv="true"' : ''}><span>🎮</span><strong>開始遊戲</strong><small>立即開始多人同樂</small></button><button class="ps-action-card secondary" data-route="${game.settingsRoute}"><span>⚙️</span><strong>進入設定</strong><small>調整玩法與遊戲設定</small></button>` : `<div class="ps-coming-panel"><span>✨</span><strong>即將推出</strong><small>這個工具仍在開發中</small></div>`}
+        </div>
+      </article>`;
+  }
+
   function renderHome() {
-    const games = getHomeGameCatalog();
+    const games = getHomeGameCatalog().slice(0, 8);
     if (!games.some((game) => game.id === selectedHomeGame)) selectedHomeGame = games[0].id;
     const tickerItems = [
-      `🎡 抽獎輪盤目前有 ${getEligibleParticipants().length} 位合資格參加者`,
-      `🎮 多項選擇題庫共有 ${state.questions.length} 道題目`,
-      `📺 大電視已設定 ${state.bigTvSettings.teamCount} 組比賽模式`,
-      '💡 點選左方遊戲清單，右方會顯示遊戲介紹及開始／設定按鈕',
-      '⌨️ 下方捷徑列可隨時快速進入各遊戲或設定頁'
+      `目前參與人數：${getEligibleParticipants().length} 人`,
+      `題庫總數：${state.questions.length} 題`,
+      `活動提醒：今天 15:00 小組活動`,
+      '新功能上線：大電視支援圖片與影片'
     ];
 
     return `
-      <div class="directory-home">
-        <section class="home-info-ticker" aria-label="平台資訊走馬燈">
-          <div class="ticker-label"><span>📢</span><strong>平台資訊</strong></div>
-          <div class="ticker-window">
-            <div class="ticker-track">${[...tickerItems, ...tickerItems].map((item) => `<span>${item}</span>`).join('')}</div>
-          </div>
-          <div class="ticker-time">活動工具中心</div>
+      <div class="ps-home">
+        <section class="ps-info-ticker" aria-label="平台資訊走馬燈">
+          <div class="ps-info-label">📣 <strong>平台資訊</strong></div>
+          <div class="ps-info-window"><div class="ps-info-track">${[...tickerItems, ...tickerItems].map((item) => `<span>${item}</span>`).join('')}</div></div>
         </section>
 
-        <div class="directory-workspace directory-workspace-compact">
-          <div class="directory-layout">
-            <section class="directory-list-panel" aria-labelledby="directoryListTitle">
-              <div class="directory-panel-title"><div><h1 id="directoryListTitle">所有遊戲 <span>${games.length}</span></h1><p>可上下滾動瀏覽更多工具</p></div></div>
-              <div class="directory-game-list" id="directoryGameList" tabindex="0">
-                ${games.map((game) => `<button class="directory-game-item ${game.id === selectedHomeGame ? 'is-selected' : ''}" type="button" data-home-game="${game.id}" aria-pressed="${game.id === selectedHomeGame}"><span class="directory-game-icon ${game.tone}">${game.icon}</span><span class="directory-game-copy"><strong>${game.title}</strong><small>${game.subtitle}</small><em>${game.meta}</em></span><span class="directory-game-status ${game.playRoute ? 'available' : ''}">${game.status}</span><span class="directory-game-arrow">›</span></button>`).join('')}
-              </div>
-            </section>
+        <header class="ps-home-header">
+          <div class="ps-brand-block"><span class="ps-brand-orbit">🪐</span><div><h1>小組活動綜合平台</h1><p>一起玩、一起學、一起成長！</p></div></div>
+          <nav class="ps-home-nav" aria-label="首頁導覽">
+            <button class="is-active" data-route="home">⌂ 首頁</button>
+            <button data-route="wheel">🎮 遊戲庫</button>
+            <button data-route="bank">🏆 排行榜</button>
+            <button data-route="bank">📋 我的活動</button>
+          </nav>
+          <div class="ps-home-user"><span>🧒</span><div><small>你好！</small><strong>小組隊長</strong></div></div>
+        </header>
 
-            <section class="directory-detail-panel" id="homeGameDetail" aria-live="polite">
-              ${renderHomeGameDetail(selectedHomeGame)}
-            </section>
-          </div>
-        </div>
+        <main class="ps-game-grid" aria-label="遊戲選擇">
+          ${games.map(renderHomeTile).join('')}
+        </main>
       </div>`;
   }
 
@@ -763,20 +775,15 @@
     document.querySelectorAll('[data-home-game]').forEach((button) => {
       button.addEventListener('click', () => {
         selectedHomeGame = button.dataset.homeGame;
-        document.querySelectorAll('[data-home-game]').forEach((item) => {
-          const selected = item.dataset.homeGame === selectedHomeGame;
-          item.classList.toggle('is-selected', selected);
-          item.setAttribute('aria-pressed', String(selected));
+        document.querySelectorAll('[data-home-game-card]').forEach((card) => {
+          const selected = card.dataset.homeGameCard === selectedHomeGame;
+          card.classList.toggle('is-selected', selected);
+          const selectButton = card.querySelector('[data-home-game]');
+          if (selectButton) selectButton.setAttribute('aria-pressed', String(selected));
+          const actions = card.querySelector('.ps-game-actions');
+          if (actions) actions.setAttribute('aria-hidden', String(!selected));
         });
-        const detail = document.getElementById('homeGameDetail');
-        if (detail) {
-          detail.classList.add('is-changing');
-          window.setTimeout(() => {
-            detail.innerHTML = renderHomeGameDetail(selectedHomeGame);
-            detail.classList.remove('is-changing');
-            bindRouteActions();
-          }, 90);
-        }
+        bindRouteActions();
       });
     });
   }
@@ -1416,6 +1423,22 @@
   menuButton.addEventListener('click',()=>{const open=!mobileNav.classList.contains('is-open');mobileNav.classList.toggle('is-open',open);menuButton.setAttribute('aria-expanded',String(open));});
   soundToggle.addEventListener('click',()=>{state.soundEnabled=!state.soundEnabled;saveState();soundToggle.innerHTML=state.soundEnabled?'🔊':'🔇';toast(state.soundEnabled?'音效已開啟':'音效已關閉');});
   soundToggle.innerHTML=state.soundEnabled?'🔊':'🔇';
+  const shortcutBar = document.getElementById('shortcutBar');
+  const shortcutCollapse = document.getElementById('shortcutCollapse');
+  const shortcutCollapsed = localStorage.getItem('groupActivityCarnival:shortcutCollapsed') === 'true';
+  document.body.classList.toggle('shortcut-collapsed', shortcutCollapsed);
+  if (shortcutCollapse) {
+    shortcutCollapse.textContent = shortcutCollapsed ? '⌃' : '⌄';
+    shortcutCollapse.setAttribute('aria-expanded', String(!shortcutCollapsed));
+    shortcutCollapse.setAttribute('aria-label', shortcutCollapsed ? '展開快捷鍵列' : '收起快捷鍵列');
+    shortcutCollapse.addEventListener('click', () => {
+      const collapsed = document.body.classList.toggle('shortcut-collapsed');
+      localStorage.setItem('groupActivityCarnival:shortcutCollapsed', String(collapsed));
+      shortcutCollapse.textContent = collapsed ? '⌃' : '⌄';
+      shortcutCollapse.setAttribute('aria-expanded', String(!collapsed));
+      shortcutCollapse.setAttribute('aria-label', collapsed ? '展開快捷鍵列' : '收起快捷鍵列');
+    });
+  }
   window.addEventListener('hashchange',render);
   document.addEventListener('keydown',(e)=>{if(e.key==='Escape')closeModal();});
   render();
