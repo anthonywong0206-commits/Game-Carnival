@@ -55,7 +55,7 @@
   const initialState = {
     questions: DEFAULT_QUESTIONS,
     participants: DEFAULT_PARTICIPANTS,
-    wheelSettings: { requireAttendance: true, requireTask: false, minPointsEnabled: false, minPoints: 80, allowRepeat: false },
+    wheelSettings: { allowRepeat: false },
     quizSettings: { secondsPerQuestion: 20, questionCount: 4, shuffleQuestions: true, shuffleOptions: true, showExplanation: true },
     bigTvQuestions: DEFAULT_BIGTV_QUESTIONS,
     bigTvCategories: DEFAULT_BIGTV_CATEGORIES,
@@ -76,6 +76,7 @@
 
   let currentRoute = getRoute();
   let wheelRotation = 0;
+  let wheelTickTimer = null;
   let quizSession = null;
   let quizTimer = null;
   let participantPage = 0;
@@ -352,21 +353,19 @@
   }
 
   function renderWheelSettings() {
-    const eligible = getEligibleParticipants();
     return `
       <div class="panel-page settings-page wheel-settings-page">
-        <div class="page-head"><div><h1>⚙ 抽獎輪盤設定</h1><p>管理抽選條件及參加者名單。設定頁可自由上下捲動。</p></div><div class="page-head-actions"><button class="btn btn-ghost" id="resetDraws">重設已抽名單</button><button class="btn btn-primary" data-route="wheel">進入遊戲</button></div></div>
-        <div class="settings-grid two-settings">
-          <section class="panel" id="wheelSettingsPanel"><div class="panel-header"><div><h2>抽選條件</h2><p class="help-text">目前合資格：${eligible.length} 人</p></div></div><div class="panel-body form-grid">
-            ${checkboxField('requireAttendance','只包括出席者',state.wheelSettings.requireAttendance)}
-            ${checkboxField('requireTask','只包括已完成任務者',state.wheelSettings.requireTask)}
-            ${checkboxField('minPointsEnabled','啟用最低積分',state.wheelSettings.minPointsEnabled)}
-            <div class="field"><label for="minPoints">最低積分</label><input class="input" id="minPoints" type="number" min="0" value="${state.wheelSettings.minPoints}"></div>
-            ${checkboxField('allowRepeat','容許重複抽中',state.wheelSettings.allowRepeat)}
-            <div class="divider"></div>
-            <div><strong>合資格名單</strong><div class="eligible-list" id="eligibleList" style="margin-top:10px">${renderEligibleChips(eligible)}</div></div>
+        <div class="page-head"><div><h1>⚙ 抽獎輪盤設定</h1><p>輸入抽獎名單並設定是否容許重複抽中。</p></div><div class="page-head-actions"><button class="btn btn-ghost" id="resetDraws">重設已抽名單</button><button class="btn btn-primary" data-route="wheel">進入遊戲</button></div></div>
+        <div class="wheel-simple-settings">
+          <section class="panel wheel-name-editor"><div class="panel-header"><div><h2>抽獎名單</h2><p class="help-text">每行輸入一個名字，按儲存後立即更新輪盤。</p></div><span class="tag green">${state.participants.length} 人</span></div><div class="panel-body stack">
+            <div class="field"><label for="wheelBulkNames">參加者姓名</label><textarea class="textarea wheel-name-textarea" id="wheelBulkNames" placeholder="小明&#10;小美&#10;阿豪">${escapeHtml(state.participants.map((p) => p.name).join('\n'))}</textarea></div>
+            <div class="wheel-setting-actions"><button class="btn btn-blue" id="saveWheelNames">儲存名單</button><button class="btn btn-ghost" id="clearWheelNames">清空名單</button></div>
           </div></section>
-          <section class="panel participant-panel"><div class="panel-header"><div><h2>參加者名單</h2><p class="help-text">每頁 ${PARTICIPANTS_PER_PAGE} 人，可新增及修改資料。</p></div><div class="panel-tools"><div class="pager compact"><button class="icon-mini" id="participantPrev" title="上一頁">‹</button><span>${participantPage + 1} / ${Math.max(1, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE))}</span><button class="icon-mini" id="participantNext" title="下一頁">›</button></div><button class="btn btn-small btn-blue" id="addParticipant">＋ 新增</button></div></div><div class="panel-body"><div class="table-wrap participant-table"><table><thead><tr><th>姓名</th><th>出席</th><th>完成任務</th><th>積分</th><th></th></tr></thead><tbody>${renderParticipantRows()}</tbody></table></div></div></section>
+          <section class="panel wheel-rule-panel"><div class="panel-header"><div><h2>抽獎條件</h2><p class="help-text">簡單清晰，只保留重複抽選設定。</p></div></div><div class="panel-body stack">
+            <label class="switch-row wheel-repeat-switch"><span><strong>不可重複抽中</strong><small>抽中後會自動從下一輪排除</small></span><input id="noRepeat" type="checkbox" ${!state.wheelSettings.allowRepeat ? 'checked' : ''}></label>
+            <div class="wheel-rule-summary"><span>目前可抽</span><strong>${getEligibleParticipants().length}</strong><small>共 ${state.participants.length} 人，已抽出 ${state.drawnIds.length} 人</small></div>
+            <button class="btn btn-ghost btn-wide" id="resetDrawsSecondary">重設所有已抽紀錄</button>
+          </div></section>
         </div>
       </div>`;
   }
@@ -374,13 +373,22 @@
   function renderWheelPlay() {
     const eligible = getEligibleParticipants();
     return `
-      <div class="fixed-game-page wheel-game-page">
-        <div class="game-topbar"><div><h1>🎡 抽獎輪盤</h1><p>按中央按鈕開始抽選</p></div><div class="game-actions"><button class="btn btn-ghost" id="resetDraws">重設</button><button class="btn btn-ghost" data-route="wheelsettings">⚙ 設定</button></div></div>
-        <section class="wheel-arena wheel-arena-play">
-          <div class="bunting"></div>
-          <div class="wheel-host" id="wheelHost"><div class="wheel-pointer"></div><div class="wheel-disc" id="wheelDisc"></div><button class="wheel-center" id="spinWheel">開始</button></div>
-          <div class="result-board">目前合資格：<strong>${eligible.length}</strong> 人　｜　已抽出：<strong>${state.drawnIds.length}</strong> 人</div>
-        </section>
+      <div class="fixed-game-page wheel-game-page wheel-showcase-page">
+        <div class="game-topbar"><div><h1>🎡 抽獎輪盤</h1><p>按中央按鈕開始抽選，轉動時會播放節奏音效</p></div><div class="game-actions"><button class="btn btn-ghost" id="resetDraws">重設</button><button class="btn btn-ghost" data-route="wheelsettings">⚙ 完整設定</button></div></div>
+        <div class="wheel-play-layout">
+          <section class="wheel-arena wheel-arena-play wheel-deluxe-arena">
+            <div class="wheel-light-ring" aria-hidden="true"></div>
+            <div class="wheel-host" id="wheelHost"><div class="wheel-pointer"></div><div class="wheel-disc" id="wheelDisc"></div><button class="wheel-center" id="spinWheel"><span>GO</span><small>開始</small></button></div>
+            <div class="result-board">目前可抽：<strong>${eligible.length}</strong> 人　｜　已抽出：<strong>${state.drawnIds.length}</strong> 人</div>
+          </section>
+          <aside class="wheel-quick-panel">
+            <div class="wheel-quick-heading"><span>⚡</span><div><h2>快捷操作</h2><p>毋須離開遊戲即可修改</p></div></div>
+            <button class="wheel-quick-card" id="quickEditNames"><span class="quick-card-icon">👥</span><span><strong>輸入名單</strong><small>${state.participants.length} 位參加者</small></span><span class="quick-chevron">›</span></button>
+            <label class="wheel-quick-card wheel-toggle-card"><span class="quick-card-icon">🔁</span><span><strong>不可重複</strong><small>抽中後自動排除</small></span><input id="quickNoRepeat" type="checkbox" ${!state.wheelSettings.allowRepeat ? 'checked' : ''}></label>
+            <button class="wheel-quick-card" id="quickResetDraws"><span class="quick-card-icon">↺</span><span><strong>重設已抽名單</strong><small>讓所有人重新加入輪盤</small></span><span class="quick-chevron">›</span></button>
+            <div class="wheel-quick-status"><span>音效</span><strong>${state.soundEnabled ? '已開啟 🔊' : '已關閉 🔇'}</strong></div>
+          </aside>
+        </div>
       </div>`;
   }
 
@@ -393,7 +401,7 @@
     participantPage = clamp(participantPage, 0, pageCount - 1);
     const start = participantPage * PARTICIPANTS_PER_PAGE;
     const rows = state.participants.slice(start, start + PARTICIPANTS_PER_PAGE);
-    return rows.map((p) => `<tr data-participant-row="${p.id}"><td><input class="input participant-name" value="${escapeHtml(p.name)}" aria-label="姓名"></td><td><input class="participant-attended" type="checkbox" ${p.attended ? 'checked' : ''} aria-label="出席"></td><td><input class="participant-task" type="checkbox" ${p.taskDone ? 'checked' : ''} aria-label="完成任務"></td><td><input class="input participant-points" type="number" min="0" value="${p.points}" aria-label="積分"></td><td><button class="icon-mini delete-participant" title="刪除">✕</button></td></tr>`).join('') || '<tr><td colspan="5"><div class="empty-state">尚未有參加者。</div></td></tr>';
+    return rows.map((p) => `<tr data-participant-row="${p.id}"><td><input class="input participant-name" value="${escapeHtml(p.name)}" aria-label="姓名"></td><td><button class="icon-mini delete-participant" title="刪除">✕</button></td></tr>`).join('') || '<tr><td colspan="2"><div class="empty-state">尚未有參加者。</div></td></tr>';
   }
 
   function renderEligibleChips(list) {
@@ -402,11 +410,8 @@
 
   function getEligibleParticipants() {
     return state.participants.filter((p) => {
-      if (state.wheelSettings.requireAttendance && !p.attended) return false;
-      if (state.wheelSettings.requireTask && !p.taskDone) return false;
-      if (state.wheelSettings.minPointsEnabled && Number(p.points) < Number(state.wheelSettings.minPoints)) return false;
       if (!state.wheelSettings.allowRepeat && state.drawnIds.includes(p.id)) return false;
-      return Boolean(p.name.trim());
+      return Boolean(String(p.name || '').trim());
     });
   }
 
@@ -791,40 +796,99 @@
   function bindWheelPlay() {
     renderWheelDisc();
     document.getElementById('spinWheel')?.addEventListener('click', spinWheel);
-    document.getElementById('resetDraws')?.addEventListener('click', () => { state.drawnIds=[]; saveState(); toast('已重設已抽名單。'); render(); });
+    document.getElementById('resetDraws')?.addEventListener('click', resetWheelDraws);
+    document.getElementById('quickResetDraws')?.addEventListener('click', resetWheelDraws);
+    document.getElementById('quickEditNames')?.addEventListener('click', openQuickNameEditor);
+    document.getElementById('quickNoRepeat')?.addEventListener('change', (event) => {
+      state.wheelSettings.allowRepeat = !event.target.checked;
+      if (state.wheelSettings.allowRepeat) state.drawnIds = [];
+      saveState();
+      renderWheelDisc();
+      refreshWheelSidePanel();
+      toast(event.target.checked ? '已啟用不可重複抽中。' : '已容許重複抽中。');
+    });
   }
 
   function bindWheelSettings() {
-    renderWheelDisc();
-    ['requireAttendance','requireTask','minPointsEnabled','allowRepeat'].forEach((id) => {
-      document.getElementById(id)?.addEventListener('change', (event) => {
-        state.wheelSettings[id] = event.target.checked;
-        saveState();
-        refreshWheelSidePanel();
-        renderWheelDisc();
-      });
+    document.getElementById('saveWheelNames')?.addEventListener('click', () => saveWheelNamesFromText(document.getElementById('wheelBulkNames')?.value || ''));
+    document.getElementById('clearWheelNames')?.addEventListener('click', () => {
+      if (!confirm('確定清空全部抽獎名單？')) return;
+      state.participants = [];
+      state.drawnIds = [];
+      saveState();
+      render();
     });
-    document.getElementById('minPoints')?.addEventListener('input', (event) => {
-      state.wheelSettings.minPoints = Number(event.target.value || 0);
-      saveState(); refreshWheelSidePanel(); renderWheelDisc();
+    document.getElementById('noRepeat')?.addEventListener('change', (event) => {
+      state.wheelSettings.allowRepeat = !event.target.checked;
+      if (state.wheelSettings.allowRepeat) state.drawnIds = [];
+      saveState();
+      render();
     });
-    document.getElementById('spinWheel')?.addEventListener('click', spinWheel);
-    document.getElementById('spinFromHead')?.addEventListener('click', spinWheel);
-    document.getElementById('resetDraws')?.addEventListener('click', () => { state.drawnIds=[]; saveState(); toast('已重設已抽名單。'); render(); });
-    document.getElementById('participantPrev')?.addEventListener('click', () => { participantPage = Math.max(0, participantPage - 1); render(); });
-    document.getElementById('participantNext')?.addEventListener('click', () => { const last = Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1); participantPage = Math.min(last, participantPage + 1); render(); });
-    document.getElementById('addParticipant')?.addEventListener('click', () => { state.participants.push({ id: crypto.randomUUID(), name: '新參加者', attended: true, taskDone: false, points: 0 }); participantPage = Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1); saveState(); render(); });
-    document.querySelectorAll('[data-participant-row]').forEach((row) => bindParticipantRow(row));
+    document.getElementById('resetDraws')?.addEventListener('click', resetWheelDraws);
+    document.getElementById('resetDrawsSecondary')?.addEventListener('click', resetWheelDraws);
   }
 
   function bindParticipantRow(row) {
     const participant = state.participants.find((p) => p.id === row.dataset.participantRow);
     if (!participant) return;
-    row.querySelector('.participant-name').addEventListener('input', (e) => { participant.name=e.target.value; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
-    row.querySelector('.participant-attended').addEventListener('change', (e) => { participant.attended=e.target.checked; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
-    row.querySelector('.participant-task').addEventListener('change', (e) => { participant.taskDone=e.target.checked; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
-    row.querySelector('.participant-points').addEventListener('input', (e) => { participant.points=Number(e.target.value||0); saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
-    row.querySelector('.delete-participant').addEventListener('click', () => { state.participants=state.participants.filter((p)=>p.id!==participant.id); state.drawnIds=state.drawnIds.filter((id)=>id!==participant.id); participantPage = Math.min(participantPage, Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1)); saveState(); render(); });
+    row.querySelector('.participant-name')?.addEventListener('input', (e) => { participant.name=e.target.value; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
+    row.querySelector('.delete-participant')?.addEventListener('click', () => { state.participants=state.participants.filter((p)=>p.id!==participant.id); state.drawnIds=state.drawnIds.filter((id)=>id!==participant.id); saveState(); render(); });
+  }
+
+  function resetWheelDraws() {
+    state.drawnIds = [];
+    saveState();
+    toast('已重設已抽名單。');
+    render();
+  }
+
+  function normalizeWheelNames(raw) {
+    const seen = new Set();
+    return String(raw || '').split(/\r?\n|,|，/).map((name) => name.trim()).filter((name) => {
+      if (!name || seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }
+
+  function saveWheelNamesFromText(raw, closeAfter = false) {
+    const names = normalizeWheelNames(raw);
+    if (!names.length) { toast('請至少輸入一個名字。'); return; }
+    const oldByName = new Map(state.participants.map((p) => [p.name, p]));
+    state.participants = names.map((name) => oldByName.get(name) || { id: crypto.randomUUID(), name });
+    const validIds = new Set(state.participants.map((p) => p.id));
+    state.drawnIds = state.drawnIds.filter((id) => validIds.has(id));
+    saveState();
+    if (closeAfter) closeModal();
+    toast(`已儲存 ${names.length} 個名字。`);
+    render();
+  }
+
+  function openQuickNameEditor() {
+    modalLayer.innerHTML = `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="quickNamesTitle"><div class="modal quick-name-modal"><h2 id="quickNamesTitle">👥 輸入抽獎名單</h2><p>每行一個名字，也可使用逗號分隔。</p><textarea class="textarea wheel-name-textarea" id="quickWheelNames">${escapeHtml(state.participants.map((p) => p.name).join('\n'))}</textarea><div class="modal-actions"><button class="btn btn-blue" id="saveQuickNames">儲存並更新輪盤</button><button class="btn btn-ghost" id="cancelQuickNames">取消</button></div></div></div>`;
+    document.getElementById('saveQuickNames')?.addEventListener('click', () => saveWheelNamesFromText(document.getElementById('quickWheelNames')?.value || '', true));
+    document.getElementById('cancelQuickNames')?.addEventListener('click', closeModal);
+  }
+
+  function startWheelTickSound() {
+    stopWheelTickSound();
+    if (!state.soundEnabled) return;
+    let tick = 0;
+    wheelTickTimer = window.setInterval(() => {
+      const progress = Math.min(1, tick / 45);
+      playTone(760 - progress * 360, .025);
+      tick += 1;
+    }, 95);
+  }
+
+  function stopWheelTickSound() {
+    if (wheelTickTimer) window.clearInterval(wheelTickTimer);
+    wheelTickTimer = null;
+  }
+
+  function playWinnerChime() {
+    if (!state.soundEnabled) return;
+    [660, 880, 1040].forEach((frequency, index) => window.setTimeout(() => playTone(frequency, .15), index * 120));
   }
 
   function refreshWheelSidePanel() {
@@ -854,19 +918,22 @@
 
   function spinWheel() {
     const eligible = getEligibleParticipants();
-    if (!eligible.length) { toast('沒有合資格參加者，請調整條件。'); return; }
+    if (!eligible.length) { toast('名單內沒有可抽選的人，請先輸入名單或重設已抽紀錄。'); return; }
     const disc = document.getElementById('wheelDisc');
     const button = document.getElementById('spinWheel');
     if (!disc || button.disabled) return;
     button.disabled = true;
+    document.querySelector('.wheel-deluxe-arena')?.classList.add('is-spinning');
+    startWheelTickSound();
     const winnerIndex = Math.floor(Math.random()*eligible.length);
     const step = 360/eligible.length;
     const target = 360 - (winnerIndex*step + step/2);
-    const baseTurns = 6 + Math.floor(Math.random()*3);
+    const baseTurns = 7 + Math.floor(Math.random()*3);
     wheelRotation += baseTurns*360 + target - (wheelRotation%360);
     disc.style.transform = `rotate(${wheelRotation}deg)`;
-    playTone(440,.08);
     window.setTimeout(() => {
+      stopWheelTickSound();
+      document.querySelector('.wheel-deluxe-arena')?.classList.remove('is-spinning');
       const winner = eligible[winnerIndex];
       if (!state.wheelSettings.allowRepeat) state.drawnIds.push(winner.id);
       saveState();
@@ -877,10 +944,10 @@
   }
 
   function showWinner(winner) {
-    modalLayer.innerHTML = `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="winnerTitle"><div class="modal"><div style="font-size:62px">🎉</div><h2 id="winnerTitle">恭喜抽中</h2><div class="winner">${escapeHtml(winner.name)}</div><p>積分：${winner.points}　｜　${winner.attended?'已出席':'未出席'}　｜　${winner.taskDone?'已完成任務':'未完成任務'}</p><div class="modal-actions"><button class="btn btn-coral" id="drawAgain">再抽一次</button><button class="btn btn-ghost" id="closeWinner">關閉</button></div></div></div>`;
+    modalLayer.innerHTML = `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="winnerTitle"><div class="modal winner-modal"><div class="winner-crown">🏆</div><h2 id="winnerTitle">恭喜抽中</h2><div class="winner">${escapeHtml(winner.name)}</div><p>${state.wheelSettings.allowRepeat ? '本輪容許重複抽中' : '此名字已從下一輪暫時排除'}</p><div class="modal-actions"><button class="btn btn-coral" id="drawAgain">再抽一次</button><button class="btn btn-ghost" id="closeWinner">關閉</button></div></div></div>`;
     document.getElementById('closeWinner').addEventListener('click', closeModal);
     document.getElementById('drawAgain').addEventListener('click', () => { closeModal(); renderWheelDisc(); spinWheel(); });
-    launchConfetti(); playTone(880,.16);
+    launchConfetti(); playWinnerChime();
   }
 
   function closeModal() { modalLayer.innerHTML=''; renderWheelDisc(); }
