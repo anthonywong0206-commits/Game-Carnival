@@ -48,39 +48,25 @@
     <main id="viewRoot" tabindex="-1"></main>
   </div>
 
-  <nav class="shortcut-bar" aria-label="遊戲及設定快捷列">
+
+  <nav class="shortcut-bar" aria-label="遊戲快捷列">
     <div class="shortcut-bar-inner">
-      <div class="shortcut-label" aria-hidden="true">
-        <span class="shortcut-bolt">⚡</span>
-        <span><strong>快速捷徑</strong><small>遊戲與設定</small></span>
+      <div class="shortcut-label"><span class="shortcut-bolt">⚡</span><span><strong>快捷操作</strong><small>遊戲及設定</small></span></div>
+      <div class="shortcut-group wheel-shortcut">
+        <span class="shortcut-icon">🎡</span>
+        <span class="shortcut-copy"><strong>抽獎輪盤</strong><small>名單抽選</small></span>
+        <span class="shortcut-actions"><button class="shortcut-button primary" data-route="wheel">進入</button><button class="shortcut-button secondary" data-route="wheelsettings">設定</button></span>
       </div>
-
-      <section class="shortcut-group wheel-shortcut" aria-label="抽獎輪盤快捷鍵">
-        <span class="shortcut-icon" aria-hidden="true">🎡</span>
-        <div class="shortcut-copy"><strong>抽獎輪盤</strong><small>幸運抽選</small></div>
-        <div class="shortcut-actions">
-          <button class="shortcut-button primary" data-route="wheel" title="進入抽獎輪盤">進入</button>
-          <button class="shortcut-button secondary" data-route="wheelsettings" title="設定抽獎輪盤">設定</button>
-        </div>
-      </section>
-
-      <section class="shortcut-group quiz-shortcut" aria-label="多項選擇快捷鍵">
-        <span class="shortcut-icon" aria-hidden="true">☷</span>
-        <div class="shortcut-copy"><strong>多項選擇</strong><small>互動問答</small></div>
-        <div class="shortcut-actions">
-          <button class="shortcut-button primary" data-route="quiz" title="進入多項選擇遊戲">進入</button>
-          <button class="shortcut-button secondary" data-route="quizsettings" title="設定多項選擇遊戲">設定</button>
-        </div>
-      </section>
-
-      <section class="shortcut-group tv-shortcut" aria-label="大電視快捷鍵">
-        <span class="shortcut-icon" aria-hidden="true">▣</span>
-        <div class="shortcut-copy"><strong>大電視</strong><small>動作猜估</small></div>
-        <div class="shortcut-actions">
-          <button class="shortcut-button primary" data-route="tvplay" data-prepare-tv="true" title="進入大電視遊戲">進入</button>
-          <button class="shortcut-button secondary" data-route="tv" title="設定大電視遊戲">設定</button>
-        </div>
-      </section>
+      <div class="shortcut-group quiz-shortcut">
+        <span class="shortcut-icon">🎮</span>
+        <span class="shortcut-copy"><strong>多項選擇</strong><small>計時問答</small></span>
+        <span class="shortcut-actions"><button class="shortcut-button primary" data-route="quiz">進入</button><button class="shortcut-button secondary" data-route="quizsettings">設定</button></span>
+      </div>
+      <div class="shortcut-group tv-shortcut">
+        <span class="shortcut-icon">📺</span>
+        <span class="shortcut-copy"><strong>大電視</strong><small>動作猜估</small></span>
+        <span class="shortcut-actions"><button class="shortcut-button primary" data-route="tvplay" data-prepare-tv="true">進入</button><button class="shortcut-button secondary" data-route="tv">設定</button></span>
+      </div>
     </div>
   </nav>
 

@@ -80,6 +80,7 @@
   let quizTimer = null;
   let participantPage = 0;
   let bankPage = 0;
+  let selectedHomeGame = 'wheel';
   const PARTICIPANTS_PER_PAGE = 5;
   const QUESTIONS_PER_PAGE = 4;
 
@@ -141,138 +142,150 @@
     binders[currentRoute]();
   }
 
-  function renderHome() {
-    const eligibleCount = getEligibleParticipants().length;
-    const featureCards = [
-      ['📤', '題庫匯入', '快速匯入題庫，節省活動準備時間。', 'violet'],
-      ['📊', 'Excel / CSV', '支援表格檔案匯入，資料管理更輕鬆。', 'green'],
-      ['👥', '分組比賽', '設定隊伍與同場競賽，提升參與感。', 'orange'],
-      ['🏆', '即時計分板', '同步顯示分數與排名，賽況一目了然。', 'blue'],
-      ['▦', '分割畫面', '大電視多組畫面模式，主持更靈活。', 'teal'],
-      ['🎉', '嘉年華體驗', '繽紛動畫與音效，營造熱鬧活動氣氛。', 'pink']
+  function getHomeGameCatalog() {
+    return [
+      {
+        id: 'wheel',
+        icon: '🎡',
+        title: '抽獎輪盤',
+        subtitle: '名單抽選與條件篩選',
+        description: '以嘉年華動畫進行抽獎，支援出席、完成任務、最低積分及避免重複抽中。',
+        meta: `${getEligibleParticipants().length} 位合資格參加者`,
+        tone: 'violet',
+        playRoute: 'wheel',
+        settingsRoute: 'wheelsettings',
+        status: '可使用',
+        preview: `<div class="catalog-preview wheel"><div class="catalog-wheel"><span>開始</span></div><div class="catalog-mini-list"><strong>抽選條件</strong><span>✓ 出席者</span><span>✓ 完成任務</span><span>✓ 積分達標</span></div></div>`
+      },
+      {
+        id: 'quiz',
+        icon: '🎮',
+        title: '多項選擇',
+        subtitle: '計時問答與即時計分',
+        description: '從題庫開始計時問答，支援題目及選項隨機排列、答案解說與遊戲結果。',
+        meta: `${state.questions.length} 道題目`,
+        tone: 'pink',
+        playRoute: 'quiz',
+        settingsRoute: 'quizsettings',
+        status: '可使用',
+        preview: `<div class="catalog-preview quiz"><div class="catalog-quiz-question">香港最高的山峰是哪一座？</div><div class="catalog-answer-grid"><span>A 太平山</span><span class="correct">B 大帽山</span><span>C 獅子山</span><span>D 鳳凰山</span></div></div>`
+      },
+      {
+        id: 'tv',
+        icon: '📺',
+        title: '大電視動作猜估',
+        subtitle: '多人動作猜題競賽',
+        description: '參加者看題目後用動作演出，隊友猜答案；支援多組比分與分割畫面。',
+        meta: `${state.bigTvSettings.teamCount} 組模式・${state.bigTvQuestions.length} 題`,
+        tone: 'blue',
+        playRoute: 'tvplay',
+        settingsRoute: 'tv',
+        prepareTv: true,
+        status: '可使用',
+        preview: `<div class="catalog-preview tv"><div class="catalog-tv-stage"><small>動作類</small><strong>打羽毛球</strong><span>只能做動作，不可說話</span></div><div class="catalog-score-strip">${renderBigTvTeamStrip()}</div></div>`
+      },
+      {
+        id: 'timer',
+        icon: '⏱️',
+        title: '小組計時器',
+        subtitle: '倒數、提醒與環節控制',
+        description: '為活動環節設定倒數及提醒音效，協助主持人掌握流程與時間。',
+        meta: '規劃中',
+        tone: 'amber',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">⏱️</span><strong>精準掌握活動節奏</strong><p>支援多段倒數及全螢幕提醒。</p></div>`
+      },
+      {
+        id: 'questionbox',
+        icon: '❓',
+        title: '互動問答箱',
+        subtitle: '匿名提問與即時投票',
+        description: '讓參加者匿名提交問題及投票，主持人可即時整理及回應。',
+        meta: '規劃中',
+        tone: 'purple',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">💬</span><strong>讓每個人都能發聲</strong><p>匿名提問、置頂及投票互動。</p></div>`
+      },
+      {
+        id: 'challenge',
+        icon: '⭐',
+        title: '任務挑戰卡',
+        subtitle: '小組任務與完成條件',
+        description: '建立挑戰任務、完成條件及分數，提升活動的投入度與合作感。',
+        meta: '規劃中',
+        tone: 'green',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">🗺️</span><strong>把活動變成挑戰旅程</strong><p>任務卡、進度與完成獎勵。</p></div>`
+      },
+      {
+        id: 'report',
+        icon: '📈',
+        title: '結果統計',
+        subtitle: '活動數據與成效回顧',
+        description: '整理參與、分數及完成狀況，方便活動後檢視及製作報告。',
+        meta: '規劃中',
+        tone: 'teal',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">📊</span><strong>活動結果一目了然</strong><p>分數、參與率及完成趨勢。</p></div>`
+      }
     ];
-    const upcomingTools = [
-      ['❓', '互動問答箱', '匿名提問、投票與即時回饋。', 'purple'],
-      ['⏱️', '小組計時器', '倒數計時、提醒與活動節奏控制。', 'amber'],
-      ['⭐', '任務挑戰卡', '建立任務及挑戰，增加互動與投入。', 'green'],
-      ['📈', '結果統計', '整理活動數據及成效，方便回顧。', 'blue']
+  }
+
+  function renderHomeGameDetail(gameId) {
+    const game = getHomeGameCatalog().find((item) => item.id === gameId) || getHomeGameCatalog()[0];
+    const available = Boolean(game.playRoute);
+    return `
+      <div class="directory-detail-head">
+        <div class="directory-detail-title"><span class="directory-detail-icon ${game.tone}">${game.icon}</span><div><small>${game.status}</small><h2>${game.title}</h2><p>${game.subtitle}</p></div></div>
+        <span class="directory-detail-meta">${game.meta}</span>
+      </div>
+      <div class="directory-detail-preview">${game.preview}</div>
+      <div class="directory-detail-description">${game.description}</div>
+      <div class="directory-detail-actions">
+        ${available ? `<button class="directory-primary ${game.tone}" data-route="${game.playRoute}" ${game.prepareTv ? 'data-prepare-tv="true"' : ''}>▶ 開始遊戲</button><button class="directory-secondary" data-route="${game.settingsRoute}">⚙ 進入設定</button>` : `<button class="directory-disabled" disabled>即將推出</button>`}
+      </div>`;
+  }
+
+  function renderHome() {
+    const games = getHomeGameCatalog();
+    if (!games.some((game) => game.id === selectedHomeGame)) selectedHomeGame = games[0].id;
+    const tickerItems = [
+      `🎡 抽獎輪盤目前有 ${getEligibleParticipants().length} 位合資格參加者`,
+      `🎮 多項選擇題庫共有 ${state.questions.length} 道題目`,
+      `📺 大電視已設定 ${state.bigTvSettings.teamCount} 組比賽模式`,
+      '💡 點選中央遊戲目錄，查看遊戲介紹及開始／設定按鈕',
+      '⌨️ 下方捷徑列可隨時快速進入各遊戲或設定頁'
     ];
 
     return `
-      <div class="home-modern">
-        <section class="home-hero" aria-labelledby="homeHeroTitle">
-          <div class="home-confetti" aria-hidden="true"></div>
-          <div class="home-hero-inner">
-            <div class="home-hero-copy">
-              <h1 id="homeHeroTitle">讓小組活動<span>更有氣氛、更易管理</span></h1>
-              <p>一站式整合抽獎、互動、計分與管理工具，讓每場活動都更流暢、更精彩。</p>
-              <div class="home-hero-actions">
-                <button class="home-btn home-btn-primary" data-route="wheel">立即開始 <span aria-hidden="true">✦</span></button>
-                <button class="home-btn home-btn-outline" data-scroll-target="homeTools">查看工具 <span aria-hidden="true">↓</span></button>
-              </div>
-            </div>
-            <div class="home-hero-art" aria-hidden="true">
-              <div class="hero-ferris-modern"><span></span><span></span><span></span><span></span></div>
-              <div class="hero-stage-modern">
-                <div class="hero-stage-lights"></div>
-                <div class="hero-dog-modern">🐶</div>
-                <div class="hero-clown-modern">🤡</div>
-              </div>
-            </div>
+      <div class="directory-home">
+        <section class="home-info-ticker" aria-label="平台資訊走馬燈">
+          <div class="ticker-label"><span>📢</span><strong>平台資訊</strong></div>
+          <div class="ticker-window">
+            <div class="ticker-track">${[...tickerItems, ...tickerItems].map((item) => `<span>${item}</span>`).join('')}</div>
           </div>
-          <div class="home-hero-wave" aria-hidden="true"></div>
+          <div class="ticker-time">活動工具中心</div>
         </section>
 
-        <main class="home-content">
-          <section class="home-section" id="homeTools" aria-labelledby="homeToolsHeading">
-            <div class="home-section-heading">
-              <div class="home-heading-icon crown">♛</div>
-              <div><h2 id="homeToolsHeading">主要工具</h2><p>選擇遊戲直接開始，或先進入設定調整活動內容。</p></div>
-            </div>
+        <div class="directory-workspace">
+          <header class="directory-header">
+            <div><p>遊戲目錄</p><h1>選擇今天要使用的活動工具</h1><span>點擊左方遊戲後，可在右方直接開始遊戲或進入設定。</span></div>
+            <div class="directory-summary"><strong>${games.filter((game) => game.playRoute).length}</strong><span>個可用遊戲</span></div>
+          </header>
 
-            <div class="home-tools-grid">
-              <article class="home-tool-card wheel-card">
-                <div class="home-tool-copy">
-                  <div class="home-tool-title"><span class="home-tool-icon">🎡</span><h3>抽獎輪盤</h3></div>
-                  <p>自訂名單及抽選條件，帶來公平又充滿驚喜的抽獎體驗。</p>
-                  <div class="home-tool-stats"><span>${eligibleCount} 位合資格參加者</span><span>動畫抽選</span></div>
-                </div>
-                <div class="home-tool-preview wheel-home-preview" aria-hidden="true">
-                  <div class="home-preview-frame"><div class="home-preview-wheel"><span>開始</span></div></div>
-                </div>
-                <div class="home-tool-actions">
-                  <button class="home-tool-enter purple" data-route="wheel">進入遊戲 <span>▶</span></button>
-                  <button class="home-tool-settings" data-route="wheelsettings">設定 <span>⚙</span></button>
-                </div>
-              </article>
+          <div class="directory-layout">
+            <section class="directory-list-panel" aria-labelledby="directoryListTitle">
+              <div class="directory-panel-title"><div><h2 id="directoryListTitle">所有遊戲</h2><p>可上下滾動瀏覽更多工具</p></div><span>${games.length}</span></div>
+              <div class="directory-game-list" id="directoryGameList" tabindex="0">
+                ${games.map((game) => `<button class="directory-game-item ${game.id === selectedHomeGame ? 'is-selected' : ''}" type="button" data-home-game="${game.id}" aria-pressed="${game.id === selectedHomeGame}"><span class="directory-game-icon ${game.tone}">${game.icon}</span><span class="directory-game-copy"><strong>${game.title}</strong><small>${game.subtitle}</small><em>${game.meta}</em></span><span class="directory-game-status ${game.playRoute ? 'available' : ''}">${game.status}</span><span class="directory-game-arrow">›</span></button>`).join('')}
+              </div>
+            </section>
 
-              <article class="home-tool-card quiz-card">
-                <div class="home-tool-copy">
-                  <div class="home-tool-title"><span class="home-tool-icon pink">☷</span><h3>多項選擇</h3></div>
-                  <p>建立互動問答及計時挑戰，完成後即時顯示分數與答案。</p>
-                  <div class="home-tool-stats"><span>${state.questions.length} 道題目</span><span>即時計分</span></div>
-                </div>
-                <div class="home-tool-preview quiz-home-preview" aria-hidden="true">
-                  <div class="home-quiz-mini">
-                    <strong>你最喜歡的活動是？</strong>
-                    <div><span>A 旅遊</span><i style="--w:82%"></i><b>42</b></div>
-                    <div><span>B 電影</span><i style="--w:68%"></i><b>35</b></div>
-                    <div><span>C 美食</span><i style="--w:52%"></i><b>28</b></div>
-                    <div><span>D 運動</span><i style="--w:35%"></i><b>15</b></div>
-                  </div>
-                </div>
-                <div class="home-tool-actions">
-                  <button class="home-tool-enter pink" data-route="quiz">進入遊戲 <span>▶</span></button>
-                  <button class="home-tool-settings" data-route="quizsettings">設定 <span>⚙</span></button>
-                </div>
-              </article>
-
-              <article class="home-tool-card tv-card">
-                <div class="home-tool-copy">
-                  <div class="home-tool-title"><span class="home-tool-icon blue">▣</span><h3>大電視動作猜估</h3></div>
-                  <p>看題目、做動作、由隊友猜答案，支援多組同場比賽。</p>
-                  <div class="home-tool-stats"><span>${state.bigTvSettings.teamCount} 組模式</span><span>分割畫面</span></div>
-                </div>
-                <div class="home-tool-preview tv-home-preview" aria-hidden="true">
-                  <div class="home-tv-mini"><div class="home-tv-lights"></div><strong>比手畫腳<br>猜一猜！</strong><div class="home-tv-people">♟ ♟ ♟</div></div>
-                </div>
-                <div class="home-tool-actions">
-                  <button class="home-tool-enter blue" data-route="tvplay" data-prepare-tv="true">進入遊戲 <span>▶</span></button>
-                  <button class="home-tool-settings" data-route="tv">設定 <span>⚙</span></button>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <section class="home-section compact" aria-labelledby="homeFeaturesHeading">
-            <div class="home-section-heading small">
-              <div class="home-heading-icon dots">✣</div>
-              <div><h2 id="homeFeaturesHeading">熱門功能</h2><p>從準備題目到比賽展示，一個平台完成。</p></div>
-            </div>
-            <div class="home-feature-grid">
-              ${featureCards.map(([icon, title, description, tone]) => `<article class="home-feature-card ${tone}"><span class="feature-icon">${icon}</span><div><h3>${title}</h3><p>${description}</p></div></article>`).join('')}
-            </div>
-          </section>
-
-          <section class="home-section compact upcoming-section" aria-labelledby="homeUpcomingHeading">
-            <div class="home-section-heading small">
-              <div class="home-heading-icon tent">🎪</div>
-              <div><h2 id="homeUpcomingHeading">更多工具 / 即將推出</h2><p>平台會持續加入更多小組帶領與活動管理工具。</p></div>
-            </div>
-            <div class="home-upcoming-grid">
-              ${upcomingTools.map(([icon, title, description, tone]) => `<article class="home-upcoming-card ${tone}"><span class="upcoming-badge">即將推出</span><span class="upcoming-icon">${icon}</span><div><h3>${title}</h3><p>${description}</p></div></article>`).join('')}
-            </div>
-          </section>
-        </main>
-
-        <footer class="home-footer">
-          <div class="home-footer-inner">
-            <div class="footer-brand"><span class="footer-brand-icon">🎪</span><div><strong>小組活動綜合平台</strong><p>讓活動更有趣，讓管理更簡單。</p></div></div>
-            <div class="footer-links"><div><strong>平台</strong><button data-route="home">首頁</button><button data-scroll-target="homeTools">所有工具</button><button data-route="bank">題庫管理</button></div><div><strong>支援</strong><span>使用教學</span><span>常見問題</span><span>聯絡我們</span></div><div><strong>關於我們</strong><span>關於平台</span><span>私隱政策</span><span>服務條款</span></div></div>
-            <div class="footer-newsletter"><strong>訂閱最新消息</strong><p>獲得新功能與活動小秘訣。</p><div><input type="email" aria-label="電子郵件" placeholder="輸入您的電子郵件"><button type="button" id="subscribeHome">訂閱</button></div></div>
+            <section class="directory-detail-panel" id="homeGameDetail" aria-live="polite">
+              ${renderHomeGameDetail(selectedHomeGame)}
+            </section>
           </div>
-          <div class="home-footer-bottom">© 2026 小組活動綜合平台・保留所有權利</div>
-        </footer>
+        </div>
       </div>`;
   }
 
@@ -701,15 +714,24 @@
   }
 
   function bindHome() {
-    document.querySelectorAll('[data-scroll-target]').forEach((button) => {
-      button.addEventListener('click', () => document.getElementById(button.dataset.scrollTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-    });
-    document.getElementById('subscribeHome')?.addEventListener('click', () => {
-      const input = document.querySelector('.footer-newsletter input');
-      const email = input?.value.trim() || '';
-      if (!email || !email.includes('@')) { toast('請輸入有效的電子郵件地址。'); return; }
-      input.value = '';
-      toast('已記錄你的訂閱意向。');
+    document.querySelectorAll('[data-home-game]').forEach((button) => {
+      button.addEventListener('click', () => {
+        selectedHomeGame = button.dataset.homeGame;
+        document.querySelectorAll('[data-home-game]').forEach((item) => {
+          const selected = item.dataset.homeGame === selectedHomeGame;
+          item.classList.toggle('is-selected', selected);
+          item.setAttribute('aria-pressed', String(selected));
+        });
+        const detail = document.getElementById('homeGameDetail');
+        if (detail) {
+          detail.classList.add('is-changing');
+          window.setTimeout(() => {
+            detail.innerHTML = renderHomeGameDetail(selectedHomeGame);
+            detail.classList.remove('is-changing');
+            bindRouteActions();
+          }, 90);
+        }
+      });
     });
   }
 
