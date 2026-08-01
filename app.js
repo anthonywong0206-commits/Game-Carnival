@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'groupActivityCarnival:v1';
+  const STORAGE_KEY = 'groupActivityCarnival:v2';
   const DEFAULT_QUESTIONS = [
     { id: crypto.randomUUID(), question: '香港最高的山峰是哪一座？', options: ['太平山', '大帽山', '獅子山', '鳳凰山'], answer: 1, score: 100, explanation: '大帽山海拔約 957 米，是香港最高峰。' },
     { id: crypto.randomUUID(), question: '下列哪一項最適合作為小組破冰活動？', options: ['沉默閱讀', '互相介紹與找共同點', '個人考試', '填寫長問卷'], answer: 1, score: 100, explanation: '互相介紹及尋找共同點能快速建立交流和安全感。' },
@@ -20,11 +20,48 @@
     { id: crypto.randomUUID(), name: '志軒', attended: true, taskDone: true, points: 130 }
   ];
 
+
+  const DEFAULT_BIGTV_CATEGORIES = [
+    { id: 'action', name: '動作類', icon: '🏃' },
+    { id: 'animal', name: '動物類', icon: '🐾' },
+    { id: 'life', name: '日常生活類', icon: '🏠' },
+    { id: 'sports', name: '運動類', icon: '🏀' },
+    { id: 'cartoon', name: '卡通角色類', icon: '🎭' },
+    { id: 'job', name: '職業類', icon: '💼' }
+  ];
+
+  const DEFAULT_BIGTV_QUESTIONS = [
+    { id: crypto.randomUUID(), prompt: '刷牙', categoryId: 'action', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '打羽毛球', categoryId: 'sports', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '游泳', categoryId: 'action', difficulty: '簡單' },
+    { id: crypto.randomUUID(), prompt: '獅子', categoryId: 'animal', difficulty: '簡單' },
+    { id: crypto.randomUUID(), prompt: '洗頭', categoryId: 'life', difficulty: '簡單' },
+    { id: crypto.randomUUID(), prompt: '開車', categoryId: 'life', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '恐龍', categoryId: 'animal', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '老師', categoryId: 'job', difficulty: '簡單' },
+    { id: crypto.randomUUID(), prompt: '超人', categoryId: 'cartoon', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '踢足球', categoryId: 'sports', difficulty: '中等' },
+    { id: crypto.randomUUID(), prompt: '刷牆', categoryId: 'job', difficulty: '困難' },
+    { id: crypto.randomUUID(), prompt: '企鵝', categoryId: 'animal', difficulty: '簡單' }
+  ];
+
+  const DEFAULT_BIGTV_TEAMS = [
+    { id: crypto.randomUUID(), name: '第一組', mascot: '🐶', score: 240, solved: 1, color: 'red' },
+    { id: crypto.randomUUID(), name: '第二組', mascot: '🐱', score: 180, solved: 1, color: 'blue' },
+    { id: crypto.randomUUID(), name: '第三組', mascot: '🐻', score: 210, solved: 1, color: 'purple' },
+    { id: crypto.randomUUID(), name: '第四組', mascot: '🐰', score: 160, solved: 0, color: 'orange' }
+  ];
+
   const initialState = {
     questions: DEFAULT_QUESTIONS,
     participants: DEFAULT_PARTICIPANTS,
     wheelSettings: { requireAttendance: true, requireTask: false, minPointsEnabled: false, minPoints: 80, allowRepeat: false },
     quizSettings: { secondsPerQuestion: 20, shuffleQuestions: true, shuffleOptions: true, showExplanation: true },
+    bigTvQuestions: DEFAULT_BIGTV_QUESTIONS,
+    bigTvCategories: DEFAULT_BIGTV_CATEGORIES,
+    bigTvSettings: { teamCount: 4, secondsPerRound: 20, scoringMode: 'speed', pointsPerCorrect: 100, splitScreen: true, selectedCategoryId: 'action', rounds: 5, theme: 'classic' },
+    bigTvTeams: DEFAULT_BIGTV_TEAMS,
+    bigTvGame: { active: false, queue: [], currentQuestionId: null, currentTeamIndex: 0, roundIndex: 0, secondsLeft: 20, paused: false, showAnswer: false },
     drawnIds: [],
     soundEnabled: true
   };
@@ -55,7 +92,12 @@
         ...structuredClone(initialState),
         ...parsed,
         wheelSettings: { ...initialState.wheelSettings, ...(parsed.wheelSettings || {}) },
-        quizSettings: { ...initialState.quizSettings, ...(parsed.quizSettings || {}) }
+        quizSettings: { ...initialState.quizSettings, ...(parsed.quizSettings || {}) },
+        bigTvSettings: { ...initialState.bigTvSettings, ...(parsed.bigTvSettings || {}) },
+        bigTvGame: { ...initialState.bigTvGame, ...(parsed.bigTvGame || {}) },
+        bigTvCategories: Array.isArray(parsed.bigTvCategories) && parsed.bigTvCategories.length ? parsed.bigTvCategories : structuredClone(initialState.bigTvCategories),
+        bigTvQuestions: Array.isArray(parsed.bigTvQuestions) && parsed.bigTvQuestions.length ? parsed.bigTvQuestions : structuredClone(initialState.bigTvQuestions),
+        bigTvTeams: Array.isArray(parsed.bigTvTeams) && parsed.bigTvTeams.length ? parsed.bigTvTeams : structuredClone(initialState.bigTvTeams)
       };
     } catch (error) {
       console.warn('Unable to load saved state', error);
@@ -69,7 +111,7 @@
 
   function getRoute() {
     const route = location.hash.replace(/^#\/?/, '').split('?')[0];
-    return ['home', 'wheel', 'quiz', 'bank'].includes(route) ? route : 'home';
+    return ['home', 'wheel', 'quiz', 'tv', 'tvplay', 'bank'].includes(route) ? route : 'home';
   }
 
   function setRoute(route) {
@@ -78,16 +120,16 @@
 
   function render() {
     currentRoute = getRoute();
-    document.querySelectorAll('[data-route]').forEach((button) => button.classList.toggle('is-active', button.dataset.route === currentRoute));
+    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const active = route === currentRoute || (route === 'tv' && currentRoute === 'tvplay'); button.classList.toggle('is-active', active); });
     mobileNav.classList.remove('is-open');
     menuButton.setAttribute('aria-expanded', 'false');
     clearQuizTimer();
 
-    const views = { home: renderHome, wheel: renderWheel, quiz: renderQuiz, bank: renderBank };
+    const views = { home: renderHome, wheel: renderWheel, quiz: renderQuiz, tv: renderTV, tvplay: renderTVPlay, bank: renderBank };
     root.innerHTML = views[currentRoute]();
     root.focus({ preventScroll: true });
     bindRouteActions();
-    const binders = { home: bindHome, wheel: bindWheel, quiz: bindQuiz, bank: bindBank };
+    const binders = { home: bindHome, wheel: bindWheel, quiz: bindQuiz, tv: bindTV, tvplay: bindTVPlay, bank: bindBank };
     binders[currentRoute]();
   }
 
@@ -113,7 +155,7 @@
         </section>
 
         <section class="section" aria-labelledby="toolsHeading">
-          <div class="section-heading"><div><h2 id="toolsHeading">熱門工具・第一階段</h2><p>兩個核心工具已可直接使用及設定。</p></div></div>
+          <div class="section-heading"><div><h2 id="toolsHeading">熱門工具・第一階段</h2><p>三個核心工具已可直接使用及設定。</p></div></div>
           <div class="tool-grid">
             <article class="tool-card">
               <div class="card-title-row">
@@ -141,6 +183,22 @@
                 </div>
               </div>
               <div class="card-actions"><button class="btn btn-blue" data-route="quiz">▶ 進入</button><button class="btn btn-ghost" data-route="bank">⚙ 設定題庫</button></div>
+            </article>
+            </article>
+
+            <article class="tool-card is-purple">
+              <div class="card-title-row">
+                <div class="card-title"><span class="number-badge">3</span><div><h3>大電視動作猜估</h3><p>看題目 × 做動作 × 隊友猜答案</p></div></div>
+                <div class="tags"><span class="tag gold">多人競賽</span><span class="tag green">分割畫面</span></div>
+              </div>
+              <div class="preview-stage purple">
+                <div class="tv-card-preview">
+                  <div class="tv-card-banner">大電視</div>
+                  <div class="tv-card-question">題目：打羽毛球</div>
+                  <div class="tv-card-scoreboard">${renderBigTvTeamStrip()}</div>
+                </div>
+              </div>
+              <div class="card-actions"><button class="btn btn-dark" data-route="tv">▶ 進入</button><button class="btn btn-ghost" data-route="tv">⚙ 設定</button></div>
             </article>
           </div>
         </section>
@@ -327,6 +385,186 @@
     launchConfetti();
   }
 
+
+  function renderTV() {
+    const selectedCategoryName = getBigTvCategoryName(state.bigTvSettings.selectedCategoryId);
+    return `
+      <div class="panel-page tv-page">
+        <section class="tv-marquee-hero">
+          <div class="bunting"></div>
+          <div class="tv-marquee-inner">
+            <div class="tv-mascot host">🐶</div>
+            <div class="tv-hero-copy">
+              <div class="tv-title-board">
+                <div class="tv-title-main">大電視</div>
+                <div class="tv-title-sub">多人動作猜估互動工具</div>
+                <div class="tv-title-flow">看題目 → 做動作 → 隊友猜答案</div>
+              </div>
+            </div>
+            <div class="tv-mascot clown">🤡</div>
+          </div>
+        </section>
+
+        <div class="tv-top-grid">
+          <section class="panel tv-preview-panel">
+            <div class="panel-header"><div><h2>遊戲預覽</h2><p class="help-text">展示大螢幕頁面、題目類別及各隊分數版面。</p></div><span class="tag coral">${state.bigTvSettings.teamCount} 組分割畫面</span></div>
+            <div class="panel-body">
+              <div class="tv-stage-preview">
+                <div class="tv-category-tabs">
+                  ${state.bigTvCategories.slice(0,5).map((cat, index) => `<button class="tv-tab ${cat.id === state.bigTvSettings.selectedCategoryId ? 'is-active' : ''}" data-tv-quick-category="${cat.id}">${escapeHtml(cat.name)}</button>`).join('')}
+                </div>
+                <div class="tv-stage-board">
+                  <div class="tv-stage-question-label">${escapeHtml(selectedCategoryName)}</div>
+                  <div class="tv-stage-question">題目：${escapeHtml(state.bigTvQuestions.find((q) => q.categoryId === state.bigTvSettings.selectedCategoryId)?.prompt || state.bigTvQuestions[0]?.prompt || '請先加入題目')}</div>
+                  <div class="tv-stage-timer">⏳ ${state.bigTvSettings.secondsPerRound} 秒</div>
+                </div>
+                <div class="tv-stage-scoreboard">${renderBigTvTeamCards(state.bigTvSettings.teamCount, false)}</div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="panel tv-settings-panel">
+            <div class="panel-header"><div><h2>快速設定</h2><p class="help-text">調整隊伍數量、計分與作答時間。</p></div></div>
+            <div class="panel-body stack">
+              ${renderChoiceRow('隊伍數量', 'tv-team-count', [['2 組',2],['3 組',3],['4 組',4]], state.bigTvSettings.teamCount)}
+              <div class="field"><label for="tvCategorySelect">題目類別</label><div class="inline-field"><select class="select" id="tvCategorySelect">${state.bigTvCategories.map((cat) => `<option value="${cat.id}" ${cat.id === state.bigTvSettings.selectedCategoryId ? 'selected' : ''}>${escapeHtml(cat.name)}</option>`).join('')}</select><button class="btn btn-ghost btn-small" id="scrollToCategoryManager">管理類別</button></div></div>
+              ${renderChoiceRow('計分模式', 'tv-scoring-mode', [['競速積分','speed'],['累積積分','accumulate']], state.bigTvSettings.scoringMode)}
+              ${renderChoiceRow('每題時間', 'tv-seconds', [['15 秒',15],['20 秒',20],['30 秒',30],['45 秒',45]], state.bigTvSettings.secondsPerRound)}
+              <div class="form-grid two"><div class="field"><label for="tvPointsPerCorrect">每題分數</label><input class="input" id="tvPointsPerCorrect" type="number" min="10" step="10" value="${state.bigTvSettings.pointsPerCorrect}"></div><div class="field"><label for="tvRounds">回合數</label><input class="input" id="tvRounds" type="number" min="1" max="50" value="${state.bigTvSettings.rounds}"></div></div>
+              <label class="switch-row"><span><strong>分割畫面模式</strong><small>同時顯示各隊得分與狀態</small></span><input type="checkbox" id="tvSplitScreen" ${state.bigTvSettings.splitScreen ? 'checked' : ''}></label>
+              <div class="card-actions"><button class="btn btn-blue" id="previewTvPlay">預覽大螢幕</button><button class="btn btn-primary" id="startTvGame">開始遊戲</button></div>
+            </div>
+          </aside>
+        </div>
+
+        <div class="tv-management-grid">
+          <section class="panel tv-import-manager">
+            <div class="panel-header"><div><h2>題目匯入與管理</h2><p class="help-text">支援 Excel／CSV、批量輸入及手動新增。</p></div><button class="btn btn-ghost btn-small" id="downloadTvTemplate">下載範本</button></div>
+            <div class="panel-body stack">
+              <div class="import-tabs" role="tablist"><button class="import-tab is-active" data-tv-tab="bulk">批量輸入</button><button class="import-tab" data-tv-tab="excel">Excel / CSV</button><button class="import-tab" data-tv-tab="manual">手動新增</button></div>
+              <div class="import-pane is-active" data-tv-pane="bulk">
+                <div class="field"><label for="tvBulkText">每行一題</label><textarea class="textarea" id="tvBulkText" style="min-height:210px" placeholder="刷牙&#10;打籃球&#10;游泳&#10;獅子&#10;開車"></textarea></div>
+                <div class="form-grid two"><div class="field"><label for="tvBulkCategory">題目類別</label><select class="select" id="tvBulkCategory">${state.bigTvCategories.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('')}</select></div><div class="field"><label for="tvBulkDifficulty">難度</label><select class="select" id="tvBulkDifficulty"><option>簡單</option><option selected>中等</option><option>困難</option></select></div></div>
+                <button class="btn btn-blue" id="importTvBulk">匯入題目</button>
+              </div>
+              <div class="import-pane" data-tv-pane="excel">
+                <div class="dropzone" id="tvDropzone"><div style="font-size:42px">🎬</div><h3>拖放大電視題庫檔案到這裡</h3><p class="help-text">欄位可用：題目、類別、難度。</p><label class="btn btn-blue" for="tvExcelFile">選擇檔案</label><input id="tvExcelFile" type="file" accept=".xlsx,.xls,.csv" hidden></div>
+                <label class="check-row"><input id="replaceTvOnImport" type="checkbox"><span>匯入時取代現有大電視題庫</span></label>
+              </div>
+              <div class="import-pane" data-tv-pane="manual">
+                <div class="field"><label for="tvManualPrompt">題目內容</label><input class="input" id="tvManualPrompt" placeholder="例如：打羽毛球"></div>
+                <div class="form-grid two"><div class="field"><label for="tvManualCategory">題目類別</label><select class="select" id="tvManualCategory">${state.bigTvCategories.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('')}</select></div><div class="field"><label for="tvManualDifficulty">難度</label><select class="select" id="tvManualDifficulty"><option>簡單</option><option selected>中等</option><option>困難</option></select></div></div>
+                <button class="btn btn-blue" id="addTvManualQuestion">＋ 加入題庫</button>
+              </div>
+              <div class="import-report" id="tvImportReport"></div>
+            </div>
+          </section>
+
+          <section class="panel tv-category-manager" id="tvCategoryManager">
+            <div class="panel-header"><div><h2>題目類別管理</h2><p class="help-text">管理大電視題目分類。</p></div></div>
+            <div class="panel-body stack">
+              <div class="tv-category-list">${renderBigTvCategoryRows()}</div>
+              <div class="form-grid two"><div class="field"><label for="newTvCategoryName">新增類別名稱</label><input class="input" id="newTvCategoryName" placeholder="例如：節日類"></div><div class="field"><label for="newTvCategoryIcon">圖示</label><input class="input" id="newTvCategoryIcon" placeholder="例如：🎉"></div></div>
+              <button class="btn btn-ghost" id="addTvCategory">＋ 新增類別</button>
+            </div>
+          </section>
+
+          <section class="panel tv-question-bank-preview">
+            <div class="panel-header"><div><h2>題庫與分數預覽</h2><p class="help-text">目前共 ${state.bigTvQuestions.length} 題。</p></div><span class="tag green">${state.bigTvSettings.pointsPerCorrect} 分 / 題</span></div>
+            <div class="panel-body stack">
+              <div class="tv-mini-score-preview">${renderBigTvTeamStrip()}</div>
+              <div class="tv-question-list">${renderBigTvQuestionPreviewRows()}</div>
+            </div>
+          </section>
+        </div>
+      </div>`;
+  }
+
+  function renderTVPlay() {
+    const game = state.bigTvGame;
+    const queue = getBigTvQueueFromState();
+    const question = queue[game.roundIndex] || null;
+    const teamCount = state.bigTvSettings.teamCount;
+    const activeTeam = state.bigTvTeams[game.currentTeamIndex] || state.bigTvTeams[0];
+    const leader = getBigTvLeader();
+    const totalRounds = Math.max(1, Math.min(state.bigTvSettings.rounds, queue.length || 1));
+    return `
+      <div class="tv-play-page">
+        <div class="tv-play-header">
+          <div class="tv-play-brand">大電視<span>即時競答・動作猜估</span></div>
+          <div class="tv-play-topline"><span>第 ${Math.min(game.roundIndex + 1, totalRounds)} 回合 / 共 ${totalRounds} 回合</span><span class="big-timer">${String(game.secondsLeft).padStart(2, '0')}</span><span>類別：${escapeHtml(question ? getBigTvCategoryName(question.categoryId) : getBigTvCategoryName(state.bigTvSettings.selectedCategoryId))}</span></div>
+        </div>
+        <div class="tv-play-layout ${state.bigTvSettings.splitScreen ? 'is-split' : ''}">
+          <section class="tv-main-screen">
+            <div class="tv-live-banner">目前出題：${escapeHtml(activeTeam?.name || '第一組')}</div>
+            <div class="tv-question-screen">
+              <div class="tv-question-screen-inner">
+                <div class="tv-question-tag">題目</div>
+                <div class="tv-question-prompt">${escapeHtml(question?.prompt || '請先到設定頁開始遊戲')}</div>
+                <div class="tv-question-rule">${game.showAnswer ? '答案已公開，可切換到下一題。' : '只能做動作，不可說話'}</div>
+              </div>
+            </div>
+          </section>
+          <aside class="tv-host-panel">
+            <h3>主持人控制區</h3>
+            <button class="btn btn-green btn-wide" id="tvPlayStart">${game.paused || !game.active ? '開始 / 繼續' : '遊戲進行中'}</button>
+            <button class="btn btn-blue btn-wide" id="tvAwardPoint">答中 +${state.bigTvSettings.pointsPerCorrect}</button>
+            <button class="btn btn-coral btn-wide" id="tvNextPrompt">下一題</button>
+            <button class="btn btn-ghost btn-wide" id="tvSkipPrompt">跳過</button>
+            <button class="btn btn-dark btn-wide" id="tvRevealAnswer">${game.showAnswer ? '隱藏答案提示' : '顯示答案提示'}</button>
+            <button class="btn btn-ghost btn-wide" id="tvPauseGame">${game.paused ? '已暫停' : '暫停'}</button>
+            <button class="btn btn-ghost btn-wide" id="tvBackToSetup">返回設定頁</button>
+            <label class="switch-row"><span><strong>分割畫面模式</strong><small>同步顯示隊伍分數</small></span><input type="checkbox" id="tvSplitPlay" ${state.bigTvSettings.splitScreen ? 'checked' : ''}></label>
+          </aside>
+        </div>
+        <section class="tv-live-scores ${state.bigTvSettings.splitScreen ? '' : 'is-hidden'}">${renderBigTvTeamCards(teamCount, true)}</section>
+        <div class="tv-play-footer"><span>🏆 目前領先：${escapeHtml(leader.name)} ${leader.score} 分</span><span>總回合數：${totalRounds} 回合</span><span>遊戲模式：動作猜估</span></div>
+      </div>`;
+  }
+
+  function renderBigTvCategoryRows() {
+    return state.bigTvCategories.map((cat) => {
+      const count = state.bigTvQuestions.filter((q) => q.categoryId === cat.id).length;
+      return `<div class="tv-category-row" data-tv-category-row="${cat.id}"><div class="tv-category-info"><span class="tv-category-icon">${escapeHtml(cat.icon || '🏷️')}</span><div><strong>${escapeHtml(cat.name)}</strong><small>${count} 題</small></div></div><div class="row-actions"><button class="icon-mini edit-tv-category" title="編輯">✎</button><button class="icon-mini delete-tv-category" title="刪除">✕</button></div></div>`;
+    }).join('');
+  }
+
+  function renderBigTvQuestionPreviewRows() {
+    return state.bigTvQuestions.slice(0, 8).map((q, index) => `<div class="tv-question-row"><div><strong>${index + 1}. ${escapeHtml(q.prompt)}</strong><div class="help-text">${escapeHtml(getBigTvCategoryName(q.categoryId))}｜${escapeHtml(q.difficulty || '中等')}</div></div></div>`).join('') || '<div class="empty-state">尚未加入任何大電視題目。</div>';
+  }
+
+  function renderBigTvTeamStrip() {
+    return state.bigTvTeams.slice(0, state.bigTvSettings.teamCount).map((team) => `<div class="tv-team-pill ${team.color}"><span>${escapeHtml(team.name)}</span><strong>${team.score}</strong></div>`).join('');
+  }
+
+  function renderBigTvTeamCards(count, showStatus) {
+    return state.bigTvTeams.slice(0, count).map((team, index) => {
+      const isActive = index === state.bigTvGame.currentTeamIndex;
+      const status = isActive ? (state.bigTvGame.active && !state.bigTvGame.paused ? '作答中' : '準備中') : '等待中';
+      return `<article class="tv-team-card ${team.color} ${isActive ? 'is-active' : ''}" data-tv-team-card="${index}"><div class="tv-team-card-head"><span class="tv-team-avatar">${team.mascot}</span><strong>${escapeHtml(team.name)}</strong></div><div class="tv-team-score">${team.score}<small>分</small></div>${showStatus ? `<div class="tv-team-status">${status}</div><div class="tv-team-meta">已答中：${team.solved || 0} 題</div>` : ''}</article>`;
+    }).join('');
+  }
+
+  function renderChoiceRow(label, name, items, selectedValue) {
+    return `<div class="field"><label>${label}</label><div class="choice-row">${items.map(([text, value]) => `<button class="choice-chip ${String(selectedValue) === String(value) ? 'is-active' : ''}" data-choice-group="${name}" data-choice-value="${value}">${text}</button>`).join('')}</div></div>`;
+  }
+
+  function getBigTvCategoryName(categoryId) {
+    return state.bigTvCategories.find((cat) => cat.id === categoryId)?.name || '未分類';
+  }
+
+  function getBigTvQueueFromState() {
+    const selected = state.bigTvSettings.selectedCategoryId;
+    let list = state.bigTvQuestions.filter((q) => !selected || q.categoryId === selected);
+    if (!list.length) list = [...state.bigTvQuestions];
+    if (!list.length) return [];
+    return list.slice(0, Math.max(1, Math.min(state.bigTvSettings.rounds, list.length)));
+  }
+
+  function getBigTvLeader() {
+    return state.bigTvTeams.slice(0, state.bigTvSettings.teamCount).reduce((best, team) => team.score > best.score ? team : best, state.bigTvTeams[0]);
+  }
+
   function renderBank() {
     return `
       <div class="panel-page">
@@ -471,6 +709,301 @@
   function bindQuizSetupControls() {
     document.getElementById('startQuiz')?.addEventListener('click', startQuiz);
     bindRouteActions();
+  }
+
+
+  function bindTV() {
+    document.querySelectorAll('[data-tv-tab]').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-tv-tab]').forEach((tab) => tab.classList.toggle('is-active', tab === button));
+        document.querySelectorAll('[data-tv-pane]').forEach((pane) => pane.classList.toggle('is-active', pane.dataset.tvPane === button.dataset.tvTab));
+      });
+    });
+
+    document.querySelectorAll('[data-choice-group]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const group = button.dataset.choiceGroup;
+        const value = button.dataset.choiceValue;
+        if (group === 'tv-team-count') state.bigTvSettings.teamCount = Number(value);
+        if (group === 'tv-scoring-mode') state.bigTvSettings.scoringMode = value;
+        if (group === 'tv-seconds') state.bigTvSettings.secondsPerRound = Number(value);
+        state.bigTvGame.secondsLeft = state.bigTvSettings.secondsPerRound;
+        saveState();
+        render();
+      });
+    });
+
+    document.getElementById('tvCategorySelect')?.addEventListener('change', (event) => {
+      state.bigTvSettings.selectedCategoryId = event.target.value;
+      saveState();
+      render();
+    });
+    document.getElementById('tvPointsPerCorrect')?.addEventListener('input', (event) => {
+      state.bigTvSettings.pointsPerCorrect = Math.max(10, Number(event.target.value || 100));
+      saveState();
+    });
+    document.getElementById('tvRounds')?.addEventListener('input', (event) => {
+      state.bigTvSettings.rounds = clamp(Number(event.target.value || 5), 1, 50);
+      saveState();
+    });
+    document.getElementById('tvSplitScreen')?.addEventListener('change', (event) => {
+      state.bigTvSettings.splitScreen = event.target.checked;
+      saveState();
+    });
+
+    document.querySelectorAll('[data-tv-quick-category]').forEach((button) => {
+      button.addEventListener('click', () => {
+        state.bigTvSettings.selectedCategoryId = button.dataset.tvQuickCategory;
+        saveState();
+        render();
+      });
+    });
+
+    document.getElementById('scrollToCategoryManager')?.addEventListener('click', () => document.getElementById('tvCategoryManager')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    document.getElementById('previewTvPlay')?.addEventListener('click', () => { prepareBigTvGame(false); setRoute('tvplay'); });
+    document.getElementById('startTvGame')?.addEventListener('click', () => { prepareBigTvGame(true); setRoute('tvplay'); });
+
+    document.getElementById('importTvBulk')?.addEventListener('click', importBigTvBulkQuestions);
+    document.getElementById('addTvManualQuestion')?.addEventListener('click', addBigTvManualQuestion);
+    document.getElementById('addTvCategory')?.addEventListener('click', addBigTvCategory);
+    document.getElementById('downloadTvTemplate')?.addEventListener('click', downloadBigTvTemplate);
+
+    document.querySelectorAll('[data-tv-category-row]').forEach((row) => {
+      const id = row.dataset.tvCategoryRow;
+      row.querySelector('.edit-tv-category')?.addEventListener('click', () => editBigTvCategory(id));
+      row.querySelector('.delete-tv-category')?.addEventListener('click', () => deleteBigTvCategory(id));
+    });
+
+    const dropzone = document.getElementById('tvDropzone');
+    const fileInput = document.getElementById('tvExcelFile');
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); dropzone.classList.add('is-dragging'); }));
+      ['dragleave', 'drop'].forEach((type) => dropzone.addEventListener(type, (event) => { event.preventDefault(); dropzone.classList.remove('is-dragging'); }));
+      dropzone.addEventListener('drop', (event) => { const file = event.dataTransfer?.files?.[0]; if (file) importBigTvExcel(file); });
+    }
+    fileInput?.addEventListener('change', (event) => { const file = event.target.files?.[0]; if (file) importBigTvExcel(file); event.target.value = ''; });
+  }
+
+  function bindTVPlay() {
+    document.getElementById('tvPlayStart')?.addEventListener('click', () => {
+      if (!state.bigTvGame.active) prepareBigTvGame(true);
+      state.bigTvGame.active = true;
+      state.bigTvGame.paused = false;
+      saveState();
+      startBigTvTimer();
+      render();
+    });
+    document.getElementById('tvAwardPoint')?.addEventListener('click', awardBigTvPoint);
+    document.getElementById('tvNextPrompt')?.addEventListener('click', () => advanceBigTvTurn(false));
+    document.getElementById('tvSkipPrompt')?.addEventListener('click', () => advanceBigTvTurn(false, true));
+    document.getElementById('tvRevealAnswer')?.addEventListener('click', () => { state.bigTvGame.showAnswer = !state.bigTvGame.showAnswer; saveState(); render(); });
+    document.getElementById('tvPauseGame')?.addEventListener('click', () => { state.bigTvGame.paused = !state.bigTvGame.paused; saveState(); if (state.bigTvGame.paused) clearQuizTimer(); else startBigTvTimer(); render(); });
+    document.getElementById('tvBackToSetup')?.addEventListener('click', () => { clearQuizTimer(); setRoute('tv'); });
+    document.getElementById('tvSplitPlay')?.addEventListener('change', (event) => { state.bigTvSettings.splitScreen = event.target.checked; saveState(); render(); });
+    if (state.bigTvGame.active && !state.bigTvGame.paused) startBigTvTimer();
+  }
+
+  function prepareBigTvGame(activate) {
+    const queue = getBigTvQueueFromState();
+    state.bigTvGame = {
+      active: activate,
+      queue: queue.map((item) => item.id),
+      currentQuestionId: queue[0]?.id || null,
+      currentTeamIndex: 0,
+      roundIndex: 0,
+      secondsLeft: state.bigTvSettings.secondsPerRound,
+      paused: !activate,
+      showAnswer: false
+    };
+    saveState();
+  }
+
+  function startBigTvTimer() {
+    clearQuizTimer();
+    quizTimer = setInterval(() => {
+      if (currentRoute !== 'tvplay' || state.bigTvGame.paused || !state.bigTvGame.active) return;
+      if (state.bigTvGame.secondsLeft > 0) {
+        state.bigTvGame.secondsLeft -= 1;
+        const timer = document.querySelector('.big-timer');
+        if (timer) timer.textContent = String(state.bigTvGame.secondsLeft).padStart(2, '0');
+      } else {
+        advanceBigTvTurn(false, true);
+      }
+    }, 1000);
+  }
+
+  function awardBigTvPoint() {
+    const team = state.bigTvTeams[state.bigTvGame.currentTeamIndex];
+    if (!team) return;
+    team.score += Number(state.bigTvSettings.pointsPerCorrect || 100);
+    team.solved = (team.solved || 0) + 1;
+    playTone(660, .12);
+    advanceBigTvTurn(true);
+  }
+
+  function advanceBigTvTurn(scored, skipped = false) {
+    const queue = getBigTvQueueFromState();
+    if (!queue.length) {
+      toast('請先在設定頁加入大電視題目。');
+      return;
+    }
+    const teamCount = state.bigTvSettings.teamCount;
+    state.bigTvGame.showAnswer = false;
+    state.bigTvGame.secondsLeft = state.bigTvSettings.secondsPerRound;
+    state.bigTvGame.currentTeamIndex = (state.bigTvGame.currentTeamIndex + 1) % teamCount;
+    state.bigTvGame.roundIndex += 1;
+    if (state.bigTvGame.roundIndex >= Math.min(queue.length, state.bigTvSettings.rounds)) {
+      state.bigTvGame.active = false;
+      state.bigTvGame.paused = true;
+      saveState();
+      clearQuizTimer();
+      toast('大電視回合完成！');
+      render();
+      return;
+    }
+    state.bigTvGame.currentQuestionId = queue[state.bigTvGame.roundIndex]?.id || queue[0].id;
+    saveState();
+    render();
+  }
+
+  function addBigTvManualQuestion() {
+    const prompt = document.getElementById('tvManualPrompt')?.value.trim();
+    const categoryId = document.getElementById('tvManualCategory')?.value || state.bigTvCategories[0]?.id;
+    const difficulty = document.getElementById('tvManualDifficulty')?.value || '中等';
+    if (!prompt) {
+      reportTv([{ type: 'error', text: '請先輸入題目內容。' }]);
+      return;
+    }
+    state.bigTvQuestions.push({ id: crypto.randomUUID(), prompt, categoryId, difficulty });
+    saveState();
+    reportTv([{ type: 'ok', text: `已加入題目：「${prompt}」` }]);
+    render();
+  }
+
+  function importBigTvBulkQuestions() {
+    const raw = document.getElementById('tvBulkText')?.value || '';
+    const categoryId = document.getElementById('tvBulkCategory')?.value || state.bigTvCategories[0]?.id;
+    const difficulty = document.getElementById('tvBulkDifficulty')?.value || '中等';
+    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) {
+      reportTv([{ type: 'error', text: '請先輸入批量題目。' }]);
+      return;
+    }
+    const added = lines.map((prompt) => ({ id: crypto.randomUUID(), prompt, categoryId, difficulty }));
+    state.bigTvQuestions.push(...added);
+    saveState();
+    reportTv([{ type: 'ok', text: `已批量匯入 ${added.length} 題。` }]);
+    render();
+  }
+
+  function addBigTvCategory() {
+    const name = document.getElementById('newTvCategoryName')?.value.trim();
+    const icon = document.getElementById('newTvCategoryIcon')?.value.trim() || '🏷️';
+    if (!name) {
+      reportTv([{ type: 'error', text: '請輸入類別名稱。' }]);
+      return;
+    }
+    const id = slugify(name);
+    if (state.bigTvCategories.some((cat) => cat.id === id || cat.name === name)) {
+      reportTv([{ type: 'error', text: '已有相同類別名稱。' }]);
+      return;
+    }
+    state.bigTvCategories.push({ id, name, icon });
+    saveState();
+    reportTv([{ type: 'ok', text: `已新增類別：「${name}」` }]);
+    render();
+  }
+
+  function editBigTvCategory(id) {
+    const category = state.bigTvCategories.find((cat) => cat.id === id);
+    if (!category) return;
+    const name = prompt('請輸入新的類別名稱：', category.name);
+    if (!name) return;
+    category.name = name.trim();
+    saveState();
+    render();
+  }
+
+  function deleteBigTvCategory(id) {
+    if (state.bigTvCategories.length <= 1) {
+      reportTv([{ type: 'error', text: '至少需要保留一個類別。' }]);
+      return;
+    }
+    const category = state.bigTvCategories.find((cat) => cat.id === id);
+    if (!category) return;
+    if (!confirm(`確定刪除「${category.name}」？其題目會移至第一個類別。`)) return;
+    const fallbackId = state.bigTvCategories.find((cat) => cat.id !== id).id;
+    state.bigTvQuestions.forEach((q) => { if (q.categoryId === id) q.categoryId = fallbackId; });
+    state.bigTvCategories = state.bigTvCategories.filter((cat) => cat.id !== id);
+    if (state.bigTvSettings.selectedCategoryId === id) state.bigTvSettings.selectedCategoryId = fallbackId;
+    saveState();
+    render();
+  }
+
+  async function importBigTvExcel(file) {
+    const name = file.name.toLowerCase();
+    try {
+      let rows = [];
+      if (name.endsWith('.csv')) {
+        rows = parseCsv(await file.text());
+      } else if (window.XLSX) {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+      } else {
+        reportTv([{ type: 'error', text: '未能載入 Excel 函式庫，請改用 CSV。' }]);
+        return;
+      }
+      const imported = parseBigTvRows(rows);
+      if (document.getElementById('replaceTvOnImport')?.checked) state.bigTvQuestions = [];
+      state.bigTvQuestions.push(...imported.items);
+      saveState();
+      reportTv([{ type: 'ok', text: `已匯入 ${imported.items.length} 題。` }, ...imported.errors.map((text) => ({ type: 'error', text }))]);
+      render();
+    } catch (error) {
+      console.error(error);
+      reportTv([{ type: 'error', text: '匯入失敗，請檢查檔案格式。' }]);
+    }
+  }
+
+  function parseBigTvRows(rows) {
+    if (!rows.length) return { items: [], errors: ['檔案內沒有資料。'] };
+    const headers = rows[0].map((cell) => normalizeHeader(cell));
+    const questionIndex = findHeader(headers, ['題目', '內容', 'prompt', 'question']);
+    const categoryIndex = findHeader(headers, ['類別', 'category']);
+    const difficultyIndex = findHeader(headers, ['難度', 'difficulty']);
+    const items = [];
+    const errors = [];
+    const startAt = questionIndex >= 0 ? 1 : 0;
+    rows.slice(startAt).forEach((row, idx) => {
+      const promptText = String(row[questionIndex >= 0 ? questionIndex : 0] ?? '').trim();
+      if (!promptText) return;
+      const categoryName = String(row[categoryIndex] ?? '').trim();
+      const difficulty = String(row[difficultyIndex] ?? '').trim() || '中等';
+      let categoryId = state.bigTvCategories.find((cat) => cat.name === categoryName)?.id || state.bigTvSettings.selectedCategoryId;
+      if (!categoryId) categoryId = state.bigTvCategories[0]?.id;
+      items.push({ id: crypto.randomUUID(), prompt: promptText, categoryId, difficulty });
+    });
+    return { items, errors };
+  }
+
+  async function downloadBigTvTemplate() {
+    const rows = [['題目', '類別', '難度'], ['刷牙', '動作類', '中等'], ['企鵝', '動物類', '簡單']];
+    if (window.XLSX) {
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '大電視題庫');
+      XLSX.writeFile(wb, '大電視題庫範本.xlsx');
+      toast('大電視題庫範本已下載。');
+      return;
+    }
+    downloadCsv(rows, '大電視題庫範本.csv');
+  }
+
+  function reportTv(items) {
+    const el = document.getElementById('tvImportReport');
+    if (el) el.innerHTML = items.map((item) => `<div class="report-item ${item.type}">${escapeHtml(item.text)}</div>`).join('');
   }
 
   function bindBank() {
@@ -689,6 +1222,7 @@
   function clearQuizTimer(){if(quizTimer){clearInterval(quizTimer);quizTimer=null;}}
   function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
   function clamp(value,min,max){return Math.min(max,Math.max(min,value));}
+  function slugify(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9一-鿿]+/g,'-').replace(/^-+|-+$/g,'') || crypto.randomUUID();}
   function escapeHtml(value){return String(value??'').replace(/[&<>'"]/g,(char)=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));}
   function escapeAttr(value){return escapeHtml(value).replace(/`/g,'&#96;');}
 
