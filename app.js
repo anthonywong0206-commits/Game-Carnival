@@ -161,8 +161,8 @@
       {
         id: 'quiz',
         icon: '🎮',
-        title: '多項選擇',
-        subtitle: '計時問答與即時計分',
+        title: '問答遊戲',
+        subtitle: '電視問答與即時計分',
         description: '從題庫開始計時問答，支援題目及選項隨機排列、答案解說與遊戲結果。',
         meta: `${state.questions.length} 道題目`,
         tone: 'pink',
@@ -418,7 +418,7 @@
   function renderQuizSettings() {
     return `
       <div class="panel-page settings-page quiz-settings-page">
-        <div class="page-head"><div><h1>⚙ 多項選擇設定</h1><p>設定題目數量、計時及隨機模式；題庫管理另設專頁。</p></div><div class="page-head-actions"><button class="btn btn-ghost" data-route="bank">管理題庫</button><button class="btn btn-primary" id="startQuizHead">進入遊戲</button></div></div>
+        <div class="page-head"><div><h1>⚙ 問答遊戲設定</h1><p>設定題目數量、計時及隨機模式；題庫管理另設專頁。</p></div><div class="page-head-actions"><button class="btn btn-ghost" data-route="bank">管理題庫</button><button class="btn btn-primary" id="startQuizHead">進入遊戲</button></div></div>
         <div id="quizArea">${renderQuizSetup()}</div>
       </div>`;
   }
@@ -427,7 +427,7 @@
     ensureQuizSession();
     return `
       <div class="fixed-game-page quiz-game-page">
-        <div class="game-topbar"><div><h1>🎮 多項選擇遊戲</h1><p>即時計分及倒數作答</p></div><div class="game-actions"><button class="btn btn-ghost" id="restartQuiz">重新開始</button><button class="btn btn-ghost" data-route="quizsettings">⚙ 設定</button></div></div>
+        <div class="game-topbar"><div><h1>💎 問答遊戲</h1><p>電視問答舞台・清晰大字作答</p></div><div class="game-actions"><button class="btn btn-ghost" id="restartQuiz">重新開始</button><button class="btn btn-ghost" data-route="quizsettings">⚙ 設定</button></div></div>
         <div id="quizArea" class="quiz-fixed-area"></div>
       </div>`;
   }
@@ -491,10 +491,21 @@
     if (!quizSession || !area) return;
     const q = quizSession.questions[quizSession.index];
     const progress = ((quizSession.index) / quizSession.questions.length) * 100;
-    area.innerHTML = `<section class="quiz-play-shell">
-      <div class="quiz-status"><div class="score-box"><small>目前分數</small><strong>⭐ ${quizSession.score}</strong></div><div class="timer-circle" id="quizTimer">${quizSession.secondsLeft}</div><div class="score-box"><small>連續答對</small><strong>🔥 ${quizSession.streak}</strong></div></div>
-      <div class="progress-track"><span style="width:${progress}%"></span></div>
-      <div class="question-card"><div class="tags" style="justify-content:center;margin-bottom:14px"><span class="tag">第 ${quizSession.index+1} 題 / 共 ${quizSession.questions.length} 題</span><span class="tag gold">${q.score||100} 分</span></div><h2>${escapeHtml(q.question)}</h2><div class="quiz-options">${q.options.map((option,i)=>`<button class="quiz-option" data-option="${i}"><span class="letter">${String.fromCharCode(65+i)}</span><span>${escapeHtml(option)}</span></button>`).join('')}</div><div id="quizFeedback"></div><div class="quiz-footer"><span class="help-text">請在時間完結前選擇答案。</span><button class="btn btn-blue" id="nextQuestion" hidden>${quizSession.index===quizSession.questions.length-1?'查看結果':'下一題'}</button></div></div>
+    area.innerHTML = `<section class="quiz-play-shell millionaire-stage">
+      <div class="quiz-status millionaire-status">
+        <div class="score-box"><small>目前獎金</small><strong>✦ ${quizSession.score}</strong></div>
+        <div class="millionaire-round"><span>第 ${quizSession.index + 1} 題</span><b>/ ${quizSession.questions.length}</b></div>
+        <div class="timer-circle" id="quizTimer">${quizSession.secondsLeft}</div>
+        <div class="score-box"><small>連續答對</small><strong>◆ ${quizSession.streak}</strong></div>
+      </div>
+      <div class="progress-track millionaire-progress"><span style="width:${progress}%"></span></div>
+      <div class="question-card millionaire-question-card">
+        <div class="millionaire-question-meta"><span>價值 ${q.score || 100} 分</span><span>請選出正確答案</span></div>
+        <h2>${escapeHtml(q.question)}</h2>
+        <div class="quiz-options millionaire-options">${q.options.map((option,i)=>`<button class="quiz-option" data-option="${i}"><span class="letter">${String.fromCharCode(65+i)}</span><span class="option-copy">${escapeHtml(option)}</span></button>`).join('')}</div>
+        <div class="millionaire-feedback-zone" id="quizFeedback"></div>
+        <div class="quiz-footer millionaire-footer"><span>答案鎖定後不能更改</span><button class="btn btn-blue" id="nextQuestion" hidden>${quizSession.index===quizSession.questions.length-1?'查看結果':'下一題'}</button></div>
+      </div>
     </section>`;
     area.querySelectorAll('[data-option]').forEach((button) => button.addEventListener('click', () => answerQuiz(Number(button.dataset.option), false)));
     document.getElementById('nextQuestion').addEventListener('click', nextQuizQuestion);
@@ -513,8 +524,8 @@
     clearQuizTimer();
     const q = quizSession.questions[quizSession.index];
     const correct = selected === q.answer;
-    if (correct) { quizSession.score += Number(q.score || 100); quizSession.streak += 1; playTone(660, .08); }
-    else { quizSession.streak = 0; playTone(220, .12); }
+    if (correct) { quizSession.score += Number(q.score || 100); quizSession.streak += 1; playQuizCorrectFanfare(); }
+    else { quizSession.streak = 0; playQuizWrongCue(); }
     quizSession.answers.push({ questionId: q.id, selected, correct, timedOut });
     document.querySelectorAll('.quiz-option').forEach((button) => {
       const index = Number(button.dataset.option);
@@ -523,7 +534,7 @@
       else if (index === selected) button.classList.add('wrong');
     });
     const feedback = document.getElementById('quizFeedback');
-    feedback.innerHTML = `<div class="quiz-explanation"><strong>${timedOut ? '⏰ 時間到！' : correct ? '✅ 答對了！' : '❌ 答錯了。'}</strong>${state.quizSettings.showExplanation && q.explanation ? `<div style="margin-top:7px">${escapeHtml(q.explanation)}</div>` : ''}</div>`;
+    feedback.innerHTML = `<div class="quiz-explanation ${correct ? 'is-correct' : 'is-wrong'}"><strong>${timedOut ? '時間到！' : correct ? '答對了！' : '答錯了。'}</strong>${state.quizSettings.showExplanation && q.explanation ? `<span>${escapeHtml(q.explanation)}</span>` : ''}</div>`;
     document.getElementById('nextQuestion').hidden = false;
   }
 
@@ -1473,6 +1484,52 @@
     for(let i=0;i<50;i++){
       const piece=document.createElement('span');piece.className='confetti';piece.style.left=`${Math.random()*100}vw`;piece.style.background=colors[i%colors.length];piece.style.animationDelay=`${Math.random()*.6}s`;piece.style.transform=`rotate(${Math.random()*360}deg)`;document.body.appendChild(piece);setTimeout(()=>piece.remove(),2600);
     }
+  }
+
+  function playQuizCorrectFanfare() {
+    if (!state.soundEnabled || !window.AudioContext) return;
+    try {
+      const ctx = new AudioContext();
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.0001, ctx.currentTime);
+      master.gain.exponentialRampToValueAtTime(0.13, ctx.currentTime + 0.025);
+      master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.05);
+      master.connect(ctx.destination);
+      const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+      notes.forEach((frequency, index) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.type = index < 3 ? 'triangle' : 'sine';
+        oscillator.frequency.setValueAtTime(frequency, ctx.currentTime + index * 0.11);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + index * 0.11);
+        gain.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + index * 0.11 + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + index * 0.11 + 0.34);
+        oscillator.connect(gain).connect(master);
+        oscillator.start(ctx.currentTime + index * 0.11);
+        oscillator.stop(ctx.currentTime + index * 0.11 + 0.38);
+      });
+      window.setTimeout(() => ctx.close(), 1250);
+    } catch (error) { console.debug(error); }
+  }
+
+  function playQuizWrongCue() {
+    if (!state.soundEnabled || !window.AudioContext) return;
+    try {
+      const ctx = new AudioContext();
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0.12, ctx.currentTime);
+      master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.55);
+      master.connect(ctx.destination);
+      [196, 146.83].forEach((frequency, index) => {
+        const oscillator = ctx.createOscillator();
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.value = frequency;
+        oscillator.connect(master);
+        oscillator.start(ctx.currentTime + index * 0.17);
+        oscillator.stop(ctx.currentTime + index * 0.17 + 0.28);
+      });
+      window.setTimeout(() => ctx.close(), 750);
+    } catch (error) { console.debug(error); }
   }
 
   function playTone(frequency=440,duration=.08){
