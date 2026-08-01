@@ -2103,3 +2103,308 @@ body[data-view="home"] #viewRoot {
   }
   body[data-view="home"] .home-info-ticker { top: 72px; }
 }
+
+/* v9 home catalogue — wide scrollable list and fixed game detail panel. */
+@media (min-width: 841px) {
+  body[data-view="home"] .directory-workspace-compact {
+    width: min(1360px, calc(100% - 48px));
+    height: 100%;
+    padding: calc(var(--home-ticker-h) + 18px) 0 16px;
+    display: block;
+  }
+
+  body[data-view="home"] .directory-layout {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, .96fr) minmax(0, 1.04fr);
+    gap: 18px;
+  }
+
+  body[data-view="home"] .directory-list-panel,
+  body[data-view="home"] .directory-detail-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-view="home"] .directory-list-panel {
+    border-radius: 22px;
+    background: rgba(249, 250, 255, .98);
+  }
+
+  body[data-view="home"] .directory-panel-title {
+    min-height: 70px;
+    padding: 15px 20px 13px;
+  }
+
+  body[data-view="home"] .directory-panel-title h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: #17214b;
+    font-size: 22px;
+    line-height: 1.15;
+  }
+
+  body[data-view="home"] .directory-panel-title h1 span {
+    min-width: 30px;
+    height: 26px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0 8px;
+    border-radius: 9px;
+    color: #fff;
+    background: #202b62;
+    font-size: 12px;
+  }
+
+  body[data-view="home"] .directory-panel-title p {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  body[data-view="home"] .directory-game-list {
+    padding: 9px 12px 14px;
+  }
+
+  body[data-view="home"] .directory-game-item {
+    min-height: 68px;
+    grid-template-columns: 48px minmax(0,1fr) auto 16px;
+    gap: 11px;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+
+  body[data-view="home"] .directory-game-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    font-size: 23px;
+  }
+
+  body[data-view="home"] .directory-game-copy strong { font-size: 14px; }
+  body[data-view="home"] .directory-game-copy small { font-size: 10px; }
+  body[data-view="home"] .directory-game-copy em { font-size: 9px; }
+
+  body[data-view="home"] .directory-detail-panel {
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto minmax(185px, 1fr) auto auto auto;
+    gap: 11px;
+    padding: 22px 24px;
+    color: #fff;
+    background:
+      radial-gradient(circle at 84% 8%, rgba(104, 94, 255, .22), transparent 32%),
+      linear-gradient(150deg, rgba(20, 28, 79, .98), rgba(31, 28, 94, .98));
+    border-color: rgba(255,255,255,.16);
+  }
+
+  body[data-view="home"] .directory-detail-head {
+    min-height: 66px;
+  }
+
+  body[data-view="home"] .directory-detail-title h2 {
+    margin: 0 0 4px;
+    color: #fff;
+    font-size: clamp(27px, 2.4vw, 38px);
+  }
+
+  body[data-view="home"] .directory-detail-title p {
+    color: rgba(255,255,255,.66);
+    font-size: 12px;
+  }
+
+  body[data-view="home"] .directory-detail-icon {
+    width: 62px;
+    height: 62px;
+    border-radius: 17px;
+    font-size: 31px;
+  }
+
+  body[data-view="home"] .directory-detail-badges {
+    flex: 0 0 auto;
+    display: grid;
+    justify-items: end;
+    gap: 8px;
+  }
+
+  body[data-view="home"] .directory-detail-status,
+  body[data-view="home"] .directory-detail-meta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 11px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 1000;
+    white-space: nowrap;
+  }
+
+  body[data-view="home"] .directory-detail-status {
+    color: #805f00;
+    background: #ffefaa;
+  }
+
+  body[data-view="home"] .directory-detail-status.available {
+    color: #a7ffd0;
+    background: rgba(46, 190, 113, .18);
+    border: 1px solid rgba(119, 244, 174, .27);
+  }
+
+  body[data-view="home"] .directory-detail-meta {
+    color: rgba(255,255,255,.76);
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.10);
+  }
+
+  body[data-view="home"] .directory-detail-preview {
+    min-height: 0;
+    height: 100%;
+    margin-top: 0;
+    border-radius: 19px;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 18px 38px rgba(0,0,0,.20);
+  }
+
+  body[data-view="home"] .catalog-preview {
+    min-height: 0;
+    height: 100%;
+    padding: clamp(14px, 2vh, 22px);
+  }
+
+  body[data-view="home"] .catalog-preview.wheel {
+    grid-template-columns: minmax(170px,.9fr) minmax(150px,.55fr);
+    gap: 20px;
+  }
+
+  body[data-view="home"] .catalog-wheel { width: min(210px, 29vh); }
+
+  body[data-view="home"] .catalog-preview.tv {
+    grid-template-rows: minmax(125px,1fr) auto;
+    gap: 10px;
+  }
+
+  body[data-view="home"] .catalog-tv-stage { border-width: 4px; }
+  body[data-view="home"] .catalog-tv-stage strong { font-size: clamp(34px, 4.2vh, 52px); }
+
+  body[data-view="home"] .directory-detail-description {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: rgba(255,255,255,.68);
+    font-size: 12px;
+    line-height: 1.65;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  body[data-view="home"] .directory-detail-features {
+    min-height: 48px;
+    display: grid;
+    gap: 7px;
+  }
+
+  body[data-view="home"] .directory-detail-features > strong {
+    color: #ffd460;
+    font-size: 12px;
+  }
+
+  body[data-view="home"] .directory-detail-features > div {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+  }
+
+  body[data-view="home"] .directory-detail-features span {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 11px;
+    color: rgba(255,255,255,.86);
+    background: rgba(255,255,255,.055);
+    font-size: 13px;
+  }
+
+  body[data-view="home"] .directory-detail-features b {
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body[data-view="home"] .directory-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 0;
+  }
+
+  body[data-view="home"] .directory-primary,
+  body[data-view="home"] .directory-secondary,
+  body[data-view="home"] .directory-disabled {
+    min-height: 48px;
+    width: 100%;
+    font-size: 14px;
+  }
+
+  body[data-view="home"] .directory-secondary {
+    color: #1f2855;
+    background: #fff;
+    border-color: transparent;
+  }
+}
+
+@media (min-width: 841px) and (max-height: 790px) {
+  body[data-view="home"] .directory-workspace-compact {
+    padding-top: calc(var(--home-ticker-h) + 12px);
+    padding-bottom: 10px;
+  }
+  body[data-view="home"] .directory-detail-panel { padding: 16px 18px; gap: 8px; }
+  body[data-view="home"] .directory-detail-head { min-height: 56px; }
+  body[data-view="home"] .directory-detail-icon { width: 54px; height: 54px; font-size: 27px; }
+  body[data-view="home"] .directory-panel-title { min-height: 60px; padding-block: 11px; }
+  body[data-view="home"] .directory-game-item { min-height: 61px; }
+  body[data-view="home"] .directory-game-icon { width: 41px; height: 41px; font-size: 20px; }
+  body[data-view="home"] .directory-detail-features { min-height: 41px; }
+  body[data-view="home"] .directory-detail-features span { min-height: 31px; padding-block: 5px; }
+  body[data-view="home"] .directory-detail-actions button { min-height: 42px; }
+}
+
+@media (max-width: 840px) {
+  body[data-view="home"] .directory-workspace-compact {
+    display: block;
+  }
+  body[data-view="home"] .directory-detail-features {
+    margin-top: 14px;
+  }
+  body[data-view="home"] .directory-detail-features > strong {
+    color: #27315a;
+  }
+  body[data-view="home"] .directory-detail-features > div {
+    display: grid;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 7px;
+  }
+  body[data-view="home"] .directory-detail-features span {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px;
+    border-radius: 11px;
+    background: #f2f4fb;
+    color: #28335e;
+    font-size: 11px;
+  }
+  body[data-view="home"] .directory-detail-features b { font-size: 9px; }
+  body[data-view="home"] .directory-detail-badges { display: grid; gap: 5px; justify-items: end; }
+  body[data-view="home"] .directory-detail-status { font-size: 9px; font-weight: 900; }
+}

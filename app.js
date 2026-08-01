@@ -80,7 +80,7 @@
   let quizTimer = null;
   let participantPage = 0;
   let bankPage = 0;
-  let selectedHomeGame = 'wheel';
+  let selectedHomeGame = 'tv';
   const PARTICIPANTS_PER_PAGE = 5;
   const QUESTIONS_PER_PAGE = 4;
 
@@ -227,20 +227,71 @@
         tone: 'teal',
         status: '即將推出',
         preview: `<div class="catalog-preview coming"><span class="coming-visual">📊</span><strong>活動結果一目了然</strong><p>分數、參與率及完成趨勢。</p></div>`
+      },
+      {
+        id: 'bingo',
+        icon: '🔢',
+        title: 'Bingo',
+        subtitle: '經典連線小組遊戲',
+        description: '建立自訂 Bingo 格，配合活動內容進行連線挑戰，簡單易玩。',
+        meta: '規劃中',
+        tone: 'purple',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">🔢</span><strong>經典 Bingo 連線挑戰</strong><p>自訂格子、題目及完成條件。</p></div>`
+      },
+      {
+        id: 'matching',
+        icon: '🔗',
+        title: '配對遊戲',
+        subtitle: '圖片或文字配對挑戰',
+        description: '透過圖片、文字或概念配對，訓練參加者的記憶與觀察能力。',
+        meta: '規劃中',
+        tone: 'green',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">🧩</span><strong>找出正確配對</strong><p>圖片、文字及概念配對模式。</p></div>`
+      },
+      {
+        id: 'scenario',
+        icon: '💬',
+        title: '情境討論',
+        subtitle: '情境題討論與小組投票',
+        description: '以不同情境引導討論、選擇及投票，協助小組整理觀點。',
+        meta: '規劃中',
+        tone: 'blue',
+        status: '即將推出',
+        preview: `<div class="catalog-preview coming"><span class="coming-visual">💬</span><strong>從情境展開討論</strong><p>小組選擇、分享及即時投票。</p></div>`
       }
     ];
+  }
+
+  function getHomeGameFeatures(gameId) {
+    const features = {
+      wheel: [['🎟️','條件抽選'],['✨','動畫效果'],['⚖️','公平公開']],
+      quiz: [['⏱️','計時問答'],['🏆','即時計分'],['📚','題庫匯入']],
+      tv: [['👥','多人互動'],['🏆','分組比賽'],['🎪','嘉年華風']],
+      timer: [['⏳','多段倒數'],['🔔','提示音效'],['🎛️','流程控制']],
+      questionbox: [['🙈','匿名提問'],['👍','即時投票'],['💬','促進交流']],
+      challenge: [['⭐','任務積分'],['🤝','團隊合作'],['🗺️','進度追蹤']],
+      report: [['📊','數據整理'],['📈','成果趨勢'],['📤','匯出報告']],
+      bingo: [['🔢','自訂格子'],['🎯','連線挑戰'],['🎉','簡單易玩']],
+      matching: [['🧩','配對挑戰'],['👁️','觀察訓練'],['🧠','記憶練習']],
+      scenario: [['💬','情境討論'],['🗳️','小組投票'],['💡','整理觀點']]
+    };
+    return features[gameId] || [['🎪','小組活動'],['✨','互動體驗'],['🧰','主持工具']];
   }
 
   function renderHomeGameDetail(gameId) {
     const game = getHomeGameCatalog().find((item) => item.id === gameId) || getHomeGameCatalog()[0];
     const available = Boolean(game.playRoute);
+    const features = getHomeGameFeatures(game.id);
     return `
       <div class="directory-detail-head">
-        <div class="directory-detail-title"><span class="directory-detail-icon ${game.tone}">${game.icon}</span><div><small>${game.status}</small><h2>${game.title}</h2><p>${game.subtitle}</p></div></div>
-        <span class="directory-detail-meta">${game.meta}</span>
+        <div class="directory-detail-title"><span class="directory-detail-icon ${game.tone}">${game.icon}</span><div><h2>${game.title}</h2><p>${game.subtitle}</p></div></div>
+        <div class="directory-detail-badges"><span class="directory-detail-status ${available ? 'available' : ''}">${game.status}</span><span class="directory-detail-meta">${game.meta}</span></div>
       </div>
       <div class="directory-detail-preview">${game.preview}</div>
-      <div class="directory-detail-description">${game.description}</div>
+      <p class="directory-detail-description">${game.description}</p>
+      <div class="directory-detail-features"><strong>特色亮點</strong><div>${features.map(([icon,label]) => `<span>${icon}<b>${label}</b></span>`).join('')}</div></div>
       <div class="directory-detail-actions">
         ${available ? `<button class="directory-primary ${game.tone}" data-route="${game.playRoute}" ${game.prepareTv ? 'data-prepare-tv="true"' : ''}>▶ 開始遊戲</button><button class="directory-secondary" data-route="${game.settingsRoute}">⚙ 進入設定</button>` : `<button class="directory-disabled" disabled>即將推出</button>`}
       </div>`;
@@ -253,7 +304,7 @@
       `🎡 抽獎輪盤目前有 ${getEligibleParticipants().length} 位合資格參加者`,
       `🎮 多項選擇題庫共有 ${state.questions.length} 道題目`,
       `📺 大電視已設定 ${state.bigTvSettings.teamCount} 組比賽模式`,
-      '💡 點選中央遊戲目錄，查看遊戲介紹及開始／設定按鈕',
+      '💡 點選左方遊戲清單，右方會顯示遊戲介紹及開始／設定按鈕',
       '⌨️ 下方捷徑列可隨時快速進入各遊戲或設定頁'
     ];
 
@@ -267,15 +318,10 @@
           <div class="ticker-time">活動工具中心</div>
         </section>
 
-        <div class="directory-workspace">
-          <header class="directory-header">
-            <div><p>遊戲目錄</p><h1>選擇今天要使用的活動工具</h1><span>點擊左方遊戲後，可在右方直接開始遊戲或進入設定。</span></div>
-            <div class="directory-summary"><strong>${games.filter((game) => game.playRoute).length}</strong><span>個可用遊戲</span></div>
-          </header>
-
+        <div class="directory-workspace directory-workspace-compact">
           <div class="directory-layout">
             <section class="directory-list-panel" aria-labelledby="directoryListTitle">
-              <div class="directory-panel-title"><div><h2 id="directoryListTitle">所有遊戲</h2><p>可上下滾動瀏覽更多工具</p></div><span>${games.length}</span></div>
+              <div class="directory-panel-title"><div><h1 id="directoryListTitle">所有遊戲 <span>${games.length}</span></h1><p>可上下滾動瀏覽更多工具</p></div></div>
               <div class="directory-game-list" id="directoryGameList" tabindex="0">
                 ${games.map((game) => `<button class="directory-game-item ${game.id === selectedHomeGame ? 'is-selected' : ''}" type="button" data-home-game="${game.id}" aria-pressed="${game.id === selectedHomeGame}"><span class="directory-game-icon ${game.tone}">${game.icon}</span><span class="directory-game-copy"><strong>${game.title}</strong><small>${game.subtitle}</small><em>${game.meta}</em></span><span class="directory-game-status ${game.playRoute ? 'available' : ''}">${game.status}</span><span class="directory-game-arrow">›</span></button>`).join('')}
               </div>
