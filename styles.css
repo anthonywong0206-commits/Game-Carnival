@@ -895,3 +895,280 @@ html, body { max-width: 100%; overflow-x: hidden; }
 @media (min-width: 981px) {
   body[data-view="tvplay"] .tv-play-page.no-scores { grid-template-rows: 68px minmax(0, 1fr) 0 38px; }
 }
+
+/* v5 definitive layout rules: scrolling content pages and separated fixed game pages. */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden !important;
+}
+body { overflow-y: auto; }
+.app-shell, #viewRoot { width: 100%; max-width: 100%; min-width: 0; }
+img, svg, canvas, video { max-width: 100%; }
+
+/* Normal scrolling pages */
+body[data-view="home"],
+body[data-view="wheelsettings"],
+body[data-view="quizsettings"],
+body[data-view="tv"],
+body[data-view="bank"] {
+  height: auto !important;
+  min-height: 100%;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+body[data-view="home"] .app-shell,
+body[data-view="wheelsettings"] .app-shell,
+body[data-view="quizsettings"] .app-shell,
+body[data-view="tv"] .app-shell,
+body[data-view="bank"] .app-shell {
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+body[data-view="home"] #viewRoot,
+body[data-view="wheelsettings"] #viewRoot,
+body[data-view="quizsettings"] #viewRoot,
+body[data-view="tv"] #viewRoot,
+body[data-view="bank"] #viewRoot {
+  height: auto !important;
+  min-height: calc(100vh - var(--header-h));
+  overflow: visible !important;
+}
+
+/* Home page: natural proportions and vertical scrolling. */
+body[data-view="home"] .page {
+  width: min(1240px, calc(100% - 32px));
+  max-width: calc(100% - 32px);
+  height: auto !important;
+  min-height: 0;
+  display: block !important;
+  overflow: visible !important;
+  padding: 28px 0 64px;
+}
+body[data-view="home"] .hero {
+  height: auto !important;
+  min-height: 330px;
+  padding: clamp(36px, 5vw, 62px);
+  border-radius: 32px;
+}
+body[data-view="home"] .hero-grid {
+  min-height: 240px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+  gap: 32px;
+}
+body[data-view="home"] .hero h1 { font-size: clamp(46px, 6vw, 78px); }
+body[data-view="home"] .hero p { font-size: clamp(16px, 1.8vw, 21px); }
+body[data-view="home"] .section {
+  margin-top: 30px !important;
+  display: block !important;
+  overflow: visible !important;
+}
+body[data-view="home"] .section-heading { margin-bottom: 16px; }
+body[data-view="home"] .tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  height: auto !important;
+}
+body[data-view="home"] .tool-card {
+  height: auto;
+  min-height: 540px;
+  padding: 20px;
+  border-radius: 26px;
+  display: grid;
+  grid-template-rows: auto minmax(285px, 1fr) auto;
+  overflow: hidden;
+}
+body[data-view="home"] .card-title-row { align-items: flex-start; }
+body[data-view="home"] .card-title h3 { font-size: 23px; }
+body[data-view="home"] .preview-stage {
+  height: auto !important;
+  min-height: 285px;
+  padding: 16px;
+}
+body[data-view="home"] .mini-wheel { width: min(210px, 100%); }
+body[data-view="home"] .quiz-preview { min-height: 250px; }
+body[data-view="home"] .tv-card-preview { min-height: 250px; }
+body[data-view="home"] .card-actions .btn { min-height: 44px; }
+body[data-view="home"] .quick-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  height: auto !important;
+}
+body[data-view="home"] .quick-card {
+  min-height: 175px;
+  padding: 20px;
+  display: block;
+}
+body[data-view="home"] .quick-card .quick-icon { width: 54px; height: 54px; }
+body[data-view="home"] .quick-card h3 { font-size: 18px; }
+body[data-view="home"] .quick-card p { font-size: 14px; }
+
+/* Scrollable settings pages */
+.settings-page,
+body[data-view="tv"] .panel-page,
+body[data-view="bank"] .panel-page {
+  width: min(1240px, calc(100% - 32px));
+  max-width: calc(100% - 32px);
+  height: auto !important;
+  min-height: 0;
+  display: block !important;
+  overflow: visible !important;
+  padding: 26px 0 64px;
+}
+.settings-page .page-head,
+body[data-view="tv"] .page-head,
+body[data-view="bank"] .page-head { margin-bottom: 20px; }
+.settings-grid { display: grid; gap: 22px; align-items: start; }
+.settings-grid.two-settings { grid-template-columns: minmax(300px, .72fr) minmax(0, 1.28fr); }
+.settings-page .panel,
+.settings-page .panel-body,
+body[data-view="tv"] .panel,
+body[data-view="tv"] .panel-body,
+body[data-view="bank"] .panel,
+body[data-view="bank"] .panel-body {
+  height: auto !important;
+  min-height: 0;
+  overflow: visible !important;
+}
+.settings-page .two-col { grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); }
+.settings-page .textarea,
+body[data-view="tv"] .textarea,
+body[data-view="bank"] .textarea {
+  max-height: none !important;
+  resize: vertical;
+}
+body[data-view="bank"] .bank-layout {
+  height: auto !important;
+  grid-template-columns: minmax(380px, .9fr) minmax(0, 1.1fr);
+  overflow: visible !important;
+}
+body[data-view="bank"] .import-panel,
+body[data-view="bank"] .question-panel { height: auto !important; }
+
+/* Fixed, single-screen game pages */
+body[data-view="wheel"],
+body[data-view="quiz"],
+body[data-view="tvplay"] {
+  height: 100%;
+  overflow: hidden !important;
+}
+body[data-view="wheel"] .app-shell,
+body[data-view="quiz"] .app-shell,
+body[data-view="tvplay"] .app-shell {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+body[data-view="wheel"] #viewRoot,
+body[data-view="quiz"] #viewRoot,
+body[data-view="tvplay"] #viewRoot {
+  height: calc(100dvh - var(--header-h)) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+.fixed-game-page {
+  width: min(1320px, calc(100% - 20px));
+  max-width: calc(100% - 20px);
+  height: 100%;
+  margin: 0 auto;
+  padding: 10px 0;
+  display: grid;
+  grid-template-rows: 62px minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+.game-topbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  color: #fff;
+  padding: 8px 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 18px;
+  background: rgba(12,20,61,.88);
+  backdrop-filter: blur(14px);
+}
+.game-topbar h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); line-height: 1; }
+.game-topbar p { margin: 4px 0 0; color: rgba(255,255,255,.72); font-size: 12px; }
+.game-actions { display: flex; gap: 9px; flex-wrap: nowrap; }
+.game-actions .btn { min-height: 38px; padding: 0 14px; font-size: 12px; white-space: nowrap; }
+
+/* Fixed wheel game */
+.wheel-arena-play {
+  height: 100%;
+  min-height: 0 !important;
+  padding: 16px;
+  border-radius: 24px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+}
+.wheel-arena-play .wheel-host {
+  width: min(54vh, 470px, 70vw);
+  max-height: calc(100% - 10px);
+  margin: 0 auto;
+  align-self: center;
+}
+.wheel-arena-play .result-board { margin: 4px 0 0; font-size: 15px; }
+
+/* Fixed quiz game */
+.quiz-fixed-area { min-height: 0; height: 100%; overflow: hidden; }
+.quiz-game-page .quiz-play-shell {
+  height: 100%;
+  min-height: 0;
+  padding: clamp(14px, 2vh, 24px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+}
+.quiz-game-page .quiz-status { min-height: 58px; }
+.quiz-game-page .progress-track { margin: 10px 0 14px; }
+.quiz-game-page .question-card {
+  width: min(960px, 100%);
+  max-height: 100%;
+  min-height: 0;
+  padding: clamp(18px, 3vh, 32px);
+  overflow: auto;
+}
+.quiz-game-page .question-card h2 { margin-bottom: 18px; font-size: clamp(24px, 4vh, 38px); }
+.quiz-game-page .quiz-options { gap: 12px; }
+.quiz-game-page .quiz-option { min-height: 60px; padding: 13px 15px; }
+.quiz-game-page .quiz-explanation { margin-top: 12px; padding: 12px; }
+.quiz-game-page .quiz-footer { margin-top: 12px; }
+.quiz-game-page .panel { height: 100%; display: grid; place-items: center; overflow: auto; }
+
+@media (max-width: 1180px) {
+  body[data-view="home"] .tool-grid { grid-template-columns: 1fr 1fr; }
+  body[data-view="home"] .quick-tools { grid-template-columns: 1fr 1fr; }
+  .settings-grid.two-settings,
+  body[data-view="bank"] .bank-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  body[data-view="home"] .page,
+  .settings-page,
+  body[data-view="tv"] .panel-page,
+  body[data-view="bank"] .panel-page { width: calc(100% - 20px); max-width: calc(100% - 20px); }
+  body[data-view="home"] .hero-grid { grid-template-columns: 1fr; }
+  body[data-view="home"] .hero { padding: 48px 22px 28px; }
+  body[data-view="home"] .tool-grid,
+  body[data-view="home"] .quick-tools { grid-template-columns: 1fr; }
+  body[data-view="home"] .tool-card { min-height: auto; }
+  body[data-view="home"] .preview-stage { min-height: 300px; }
+  .settings-page .two-col { grid-template-columns: 1fr; }
+  .fixed-game-page { width: calc(100% - 12px); max-width: calc(100% - 12px); padding: 6px 0; grid-template-rows: auto minmax(0, 1fr); }
+  .game-topbar { align-items: flex-start; padding: 8px 10px; }
+  .game-topbar p { display: none; }
+  .game-actions { gap: 5px; }
+  .game-actions .btn { min-height: 34px; padding: 0 9px; font-size: 10px; }
+  .wheel-arena-play .wheel-host { width: min(72vw, 45vh); }
+  .quiz-game-page .quiz-options { grid-template-columns: 1fr; }
+  .quiz-game-page .question-card { overflow-y: auto; }
+}

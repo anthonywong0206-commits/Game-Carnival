@@ -56,7 +56,7 @@
     questions: DEFAULT_QUESTIONS,
     participants: DEFAULT_PARTICIPANTS,
     wheelSettings: { requireAttendance: true, requireTask: false, minPointsEnabled: false, minPoints: 80, allowRepeat: false },
-    quizSettings: { secondsPerQuestion: 20, shuffleQuestions: true, shuffleOptions: true, showExplanation: true },
+    quizSettings: { secondsPerQuestion: 20, questionCount: 4, shuffleQuestions: true, shuffleOptions: true, showExplanation: true },
     bigTvQuestions: DEFAULT_BIGTV_QUESTIONS,
     bigTvCategories: DEFAULT_BIGTV_CATEGORIES,
     bigTvSettings: { teamCount: 4, secondsPerRound: 20, scoringMode: 'speed', pointsPerCorrect: 100, splitScreen: true, selectedCategoryId: 'action', rounds: 5, theme: 'classic' },
@@ -111,7 +111,7 @@
 
   function getRoute() {
     const route = location.hash.replace(/^#\/?/, '').split('?')[0];
-    return ['home', 'wheel', 'quiz', 'tv', 'tvplay', 'bank'].includes(route) ? route : 'home';
+    return ['home', 'wheel', 'wheelsettings', 'quiz', 'quizsettings', 'tv', 'tvplay', 'bank'].includes(route) ? route : 'home';
   }
 
   function setRoute(route) {
@@ -121,16 +121,16 @@
   function render() {
     currentRoute = getRoute();
     document.body.dataset.view = currentRoute;
-    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const active = route === currentRoute || (route === 'tvplay' && (currentRoute === 'tv' || currentRoute === 'tvplay')) || (route === 'tv' && currentRoute === 'tvplay'); button.classList.toggle('is-active', active); });
+    document.querySelectorAll('[data-route]').forEach((button) => { const route = button.dataset.route; const groups = { wheel: ['wheel','wheelsettings'], quiz: ['quiz','quizsettings'], tvplay: ['tv','tvplay'] }; const active = route === currentRoute || (groups[route] || []).includes(currentRoute); button.classList.toggle('is-active', active); });
     mobileNav.classList.remove('is-open');
     menuButton.setAttribute('aria-expanded', 'false');
     clearQuizTimer();
 
-    const views = { home: renderHome, wheel: renderWheel, quiz: renderQuiz, tv: renderTV, tvplay: renderTVPlay, bank: renderBank };
+    const views = { home: renderHome, wheel: renderWheelPlay, wheelsettings: renderWheelSettings, quiz: renderQuizPlay, quizsettings: renderQuizSettings, tv: renderTV, tvplay: renderTVPlay, bank: renderBank };
     root.innerHTML = views[currentRoute]();
     root.focus({ preventScroll: true });
     bindRouteActions();
-    const binders = { home: bindHome, wheel: bindWheel, quiz: bindQuiz, tv: bindTV, tvplay: bindTVPlay, bank: bindBank };
+    const binders = { home: bindHome, wheel: bindWheelPlay, wheelsettings: bindWheelSettings, quiz: bindQuizPlay, quizsettings: bindQuizSettings, tv: bindTV, tvplay: bindTVPlay, bank: bindBank };
     binders[currentRoute]();
   }
 
@@ -169,7 +169,7 @@
                   <div class="condition-board"><strong>抽獎條件</strong><span>✓ 出席者</span><span>✓ 完成任務</span><span>✓ 積分達標</span><span>符合人數：${getEligibleParticipants().length} 人</span></div>
                 </div>
               </div>
-              <div class="card-actions"><button class="btn btn-coral" data-route="wheel">▶ 進入</button><button class="btn btn-ghost" data-route="wheel" data-focus="settings">⚙ 設定</button></div>
+              <div class="card-actions"><button class="btn btn-coral" data-route="wheel">▶ 進入</button><button class="btn btn-ghost" data-route="wheelsettings">⚙ 設定</button></div>
             </article>
 
             <article class="tool-card is-blue">
@@ -183,8 +183,7 @@
                   <div class="quiz-preview-panel"><h4>香港最高的山峰是哪一座？</h4><div class="answer-grid"><div class="answer-chip">A 太平山</div><div class="answer-chip correct">B 大帽山 ✓</div><div class="answer-chip">C 獅子山</div><div class="answer-chip">D 鳳凰山</div></div></div>
                 </div>
               </div>
-              <div class="card-actions"><button class="btn btn-blue" data-route="quiz">▶ 進入</button><button class="btn btn-ghost" data-route="bank">⚙ 設定題庫</button></div>
-            </article>
+              <div class="card-actions"><button class="btn btn-blue" data-route="quiz">▶ 進入</button><button class="btn btn-ghost" data-route="quizsettings">⚙ 設定</button></div>
             </article>
 
             <article class="tool-card is-purple">
@@ -220,30 +219,36 @@
     return `<article class="quick-card"><div class="quick-icon">${icon}</div><h3>${title}</h3><p>${text}</p><div class="tags" style="margin-top:14px"><span class="tag gold">即將推出</span></div></article>`;
   }
 
-  function renderWheel() {
+  function renderWheelSettings() {
     const eligible = getEligibleParticipants();
     return `
-      <div class="panel-page">
-        <div class="page-head"><div><h1>🎡 抽獎輪盤</h1><p>按出席、完成任務及積分條件篩選參加者，再進行動畫抽選。</p></div><div class="page-head-actions"><button class="btn btn-ghost" id="resetDraws">重設已抽名單</button><button class="btn btn-primary" id="spinFromHead">開始抽獎</button></div></div>
-        <div class="wheel-workspace">
-          <section class="wheel-arena">
-            <div class="bunting"></div>
-            <div class="wheel-host" id="wheelHost"><div class="wheel-pointer"></div><div class="wheel-disc" id="wheelDisc"></div><button class="wheel-center" id="spinWheel">開始</button></div>
-            <div class="result-board">目前合資格：<strong>${eligible.length}</strong> 人　｜　已抽出：<strong>${state.drawnIds.length}</strong> 人</div>
-          </section>
-          <aside class="stack">
-            <section class="panel" id="wheelSettingsPanel"><div class="panel-header"><h2>抽選條件</h2></div><div class="panel-body form-grid">
-              ${checkboxField('requireAttendance','只包括出席者',state.wheelSettings.requireAttendance)}
-              ${checkboxField('requireTask','只包括已完成任務者',state.wheelSettings.requireTask)}
-              ${checkboxField('minPointsEnabled','啟用最低積分',state.wheelSettings.minPointsEnabled)}
-              <div class="field"><label for="minPoints">最低積分</label><input class="input" id="minPoints" type="number" min="0" value="${state.wheelSettings.minPoints}"></div>
-              ${checkboxField('allowRepeat','容許重複抽中',state.wheelSettings.allowRepeat)}
-              <div class="divider"></div>
-              <div><strong>合資格名單</strong><div class="eligible-list" id="eligibleList" style="margin-top:10px">${renderEligibleChips(eligible)}</div></div>
-            </div></section>
-            <section class="panel participant-panel"><div class="panel-header"><div><h2>參加者名單</h2><p class="help-text">每頁 ${PARTICIPANTS_PER_PAGE} 人，避免頁面出現捲動列。</p></div><div class="panel-tools"><div class="pager compact"><button class="icon-mini" id="participantPrev" title="上一頁">‹</button><span>${participantPage + 1} / ${Math.max(1, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE))}</span><button class="icon-mini" id="participantNext" title="下一頁">›</button></div><button class="btn btn-small btn-blue" id="addParticipant">＋ 新增</button></div></div><div class="panel-body"><div class="table-wrap participant-table"><table><thead><tr><th>姓名</th><th>出席</th><th>完成任務</th><th>積分</th><th></th></tr></thead><tbody>${renderParticipantRows()}</tbody></table></div></div></section>
-          </aside>
+      <div class="panel-page settings-page wheel-settings-page">
+        <div class="page-head"><div><h1>⚙ 抽獎輪盤設定</h1><p>管理抽選條件及參加者名單。設定頁可自由上下捲動。</p></div><div class="page-head-actions"><button class="btn btn-ghost" id="resetDraws">重設已抽名單</button><button class="btn btn-primary" data-route="wheel">進入遊戲</button></div></div>
+        <div class="settings-grid two-settings">
+          <section class="panel" id="wheelSettingsPanel"><div class="panel-header"><div><h2>抽選條件</h2><p class="help-text">目前合資格：${eligible.length} 人</p></div></div><div class="panel-body form-grid">
+            ${checkboxField('requireAttendance','只包括出席者',state.wheelSettings.requireAttendance)}
+            ${checkboxField('requireTask','只包括已完成任務者',state.wheelSettings.requireTask)}
+            ${checkboxField('minPointsEnabled','啟用最低積分',state.wheelSettings.minPointsEnabled)}
+            <div class="field"><label for="minPoints">最低積分</label><input class="input" id="minPoints" type="number" min="0" value="${state.wheelSettings.minPoints}"></div>
+            ${checkboxField('allowRepeat','容許重複抽中',state.wheelSettings.allowRepeat)}
+            <div class="divider"></div>
+            <div><strong>合資格名單</strong><div class="eligible-list" id="eligibleList" style="margin-top:10px">${renderEligibleChips(eligible)}</div></div>
+          </div></section>
+          <section class="panel participant-panel"><div class="panel-header"><div><h2>參加者名單</h2><p class="help-text">每頁 ${PARTICIPANTS_PER_PAGE} 人，可新增及修改資料。</p></div><div class="panel-tools"><div class="pager compact"><button class="icon-mini" id="participantPrev" title="上一頁">‹</button><span>${participantPage + 1} / ${Math.max(1, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE))}</span><button class="icon-mini" id="participantNext" title="下一頁">›</button></div><button class="btn btn-small btn-blue" id="addParticipant">＋ 新增</button></div></div><div class="panel-body"><div class="table-wrap participant-table"><table><thead><tr><th>姓名</th><th>出席</th><th>完成任務</th><th>積分</th><th></th></tr></thead><tbody>${renderParticipantRows()}</tbody></table></div></div></section>
         </div>
+      </div>`;
+  }
+
+  function renderWheelPlay() {
+    const eligible = getEligibleParticipants();
+    return `
+      <div class="fixed-game-page wheel-game-page">
+        <div class="game-topbar"><div><h1>🎡 抽獎輪盤</h1><p>按中央按鈕開始抽選</p></div><div class="game-actions"><button class="btn btn-ghost" id="resetDraws">重設</button><button class="btn btn-ghost" data-route="wheelsettings">⚙ 設定</button></div></div>
+        <section class="wheel-arena wheel-arena-play">
+          <div class="bunting"></div>
+          <div class="wheel-host" id="wheelHost"><div class="wheel-pointer"></div><div class="wheel-disc" id="wheelDisc"></div><button class="wheel-center" id="spinWheel">開始</button></div>
+          <div class="result-board">目前合資格：<strong>${eligible.length}</strong> 人　｜　已抽出：<strong>${state.drawnIds.length}</strong> 人</div>
+        </section>
       </div>`;
   }
 
@@ -273,11 +278,20 @@
     });
   }
 
-  function renderQuiz() {
+  function renderQuizSettings() {
     return `
-      <div class="panel-page">
-        <div class="page-head"><div><h1>🎮 多項選擇遊戲</h1><p>使用已建立的題庫進行計時問答、即時計分及結果回顧。</p></div><div class="page-head-actions"><button class="btn btn-ghost" data-route="bank">管理題庫</button><button class="btn btn-primary" id="startQuizHead">開始遊戲</button></div></div>
+      <div class="panel-page settings-page quiz-settings-page">
+        <div class="page-head"><div><h1>⚙ 多項選擇設定</h1><p>設定題目數量、計時及隨機模式；題庫管理另設專頁。</p></div><div class="page-head-actions"><button class="btn btn-ghost" data-route="bank">管理題庫</button><button class="btn btn-primary" id="startQuizHead">進入遊戲</button></div></div>
         <div id="quizArea">${renderQuizSetup()}</div>
+      </div>`;
+  }
+
+  function renderQuizPlay() {
+    ensureQuizSession();
+    return `
+      <div class="fixed-game-page quiz-game-page">
+        <div class="game-topbar"><div><h1>🎮 多項選擇遊戲</h1><p>即時計分及倒數作答</p></div><div class="game-actions"><button class="btn btn-ghost" id="restartQuiz">重新開始</button><button class="btn btn-ghost" data-route="quizsettings">⚙ 設定</button></div></div>
+        <div id="quizArea" class="quiz-fixed-area"></div>
       </div>`;
   }
 
@@ -285,31 +299,19 @@
     return `<div class="two-col">
       <section class="panel"><div class="panel-header"><h2>遊戲設定</h2></div><div class="panel-body form-grid">
         <div class="stat-grid"><div class="stat"><small>題目數量</small><strong>${state.questions.length}</strong></div><div class="stat"><small>每題時間</small><strong>${state.quizSettings.secondsPerQuestion}s</strong></div><div class="stat"><small>滿分</small><strong>${state.questions.reduce((sum,q)=>sum+Number(q.score||100),0)}</strong></div></div>
-        <div class="form-grid two"><div class="field"><label for="secondsPerQuestion">每題作答時間（秒）</label><input class="input" id="secondsPerQuestion" type="number" min="5" max="300" value="${state.quizSettings.secondsPerQuestion}"></div><div class="field"><label for="questionCount">本次題目數量</label><select class="select" id="questionCount">${[5,10,15,20,state.questions.length].filter((v,i,a)=>v<=state.questions.length&&a.indexOf(v)===i).map(v=>`<option value="${v}" ${v===Math.min(10,state.questions.length)?'selected':''}>${v} 題</option>`).join('')}</select></div></div>
+        <div class="form-grid two"><div class="field"><label for="secondsPerQuestion">每題作答時間（秒）</label><input class="input" id="secondsPerQuestion" type="number" min="5" max="300" value="${state.quizSettings.secondsPerQuestion}"></div><div class="field"><label for="questionCount">本次題目數量</label><select class="select" id="questionCount">${[1,5,10,15,20,state.questions.length].filter((v,i,a)=>v<=state.questions.length&&a.indexOf(v)===i).map(v=>`<option value="${v}" ${v===Math.min(state.quizSettings.questionCount || state.questions.length,state.questions.length)?'selected':''}>${v} 題</option>`).join('')}</select></div></div>
         ${checkboxField('shuffleQuestions','隨機排列題目',state.quizSettings.shuffleQuestions)}
         ${checkboxField('shuffleOptions','隨機排列選項',state.quizSettings.shuffleOptions)}
         ${checkboxField('showExplanation','答題後顯示解說',state.quizSettings.showExplanation)}
-        <button class="btn btn-blue btn-wide" id="startQuiz">▶ 開始多項選擇遊戲</button>
+        <button class="btn btn-blue btn-wide" id="startQuiz">儲存設定並進入遊戲</button>
       </div></section>
       <aside class="panel"><div class="panel-header"><h2>題庫預覽</h2><span class="tag">${state.questions.length} 題</span></div><div class="panel-body stack">${state.questions.slice(0,4).map((q,i)=>`<div><strong>${i+1}. ${escapeHtml(q.question)}</strong><div class="help-text" style="margin-top:6px">正確答案：${String.fromCharCode(65+q.answer)}　｜　${q.score||100} 分</div></div><div class="divider"></div>`).join('') || '<div class="empty-state">尚未建立題目。</div>'}<button class="btn btn-ghost btn-wide" data-route="bank">＋ 匯入或新增題目</button></div></aside>
     </div>`;
   }
 
-  function startQuiz() {
-    if (!state.questions.length) {
-      toast('請先建立至少一條題目。');
-      setRoute('bank');
-      return;
-    }
-    const countSelect = document.getElementById('questionCount');
-    const secondsInput = document.getElementById('secondsPerQuestion');
-    state.quizSettings.secondsPerQuestion = clamp(Number(secondsInput?.value || 20), 5, 300);
-    state.quizSettings.shuffleQuestions = Boolean(document.getElementById('shuffleQuestions')?.checked);
-    state.quizSettings.shuffleOptions = Boolean(document.getElementById('shuffleOptions')?.checked);
-    state.quizSettings.showExplanation = Boolean(document.getElementById('showExplanation')?.checked);
-    saveState();
-
-    const maxCount = Math.min(Number(countSelect?.value || state.questions.length), state.questions.length);
+  function buildQuizSession() {
+    if (!state.questions.length) return null;
+    const maxCount = Math.min(Number(state.quizSettings.questionCount || state.questions.length), state.questions.length);
     let questions = state.questions.map((q) => ({ ...q, options: [...q.options] }));
     if (state.quizSettings.shuffleQuestions) questions = shuffle(questions);
     questions = questions.slice(0, maxCount);
@@ -320,8 +322,30 @@
         return { ...q, options, answer: options.indexOf(correctText) };
       });
     }
-    quizSession = { questions, index: 0, score: 0, streak: 0, answered: false, answers: [], secondsLeft: state.quizSettings.secondsPerQuestion };
-    renderQuizQuestion();
+    return { questions, index: 0, score: 0, streak: 0, answered: false, answers: [], secondsLeft: state.quizSettings.secondsPerQuestion };
+  }
+
+  function ensureQuizSession(force = false) {
+    if (force || !quizSession || !quizSession.questions?.length) quizSession = buildQuizSession();
+    return quizSession;
+  }
+
+  function startQuiz() {
+    if (!state.questions.length) {
+      toast('請先建立至少一條題目。');
+      setRoute('bank');
+      return;
+    }
+    const countSelect = document.getElementById('questionCount');
+    const secondsInput = document.getElementById('secondsPerQuestion');
+    state.quizSettings.secondsPerQuestion = clamp(Number(secondsInput?.value || state.quizSettings.secondsPerQuestion || 20), 5, 300);
+    state.quizSettings.questionCount = Math.min(Number(countSelect?.value || state.questions.length), state.questions.length);
+    state.quizSettings.shuffleQuestions = Boolean(document.getElementById('shuffleQuestions')?.checked);
+    state.quizSettings.shuffleOptions = Boolean(document.getElementById('shuffleOptions')?.checked);
+    state.quizSettings.showExplanation = Boolean(document.getElementById('showExplanation')?.checked);
+    saveState();
+    ensureQuizSession(true);
+    setRoute('quiz');
   }
 
   function renderQuizQuestion() {
@@ -380,8 +404,8 @@
     const area = document.getElementById('quizArea');
     const correctCount = quizSession.answers.filter((a) => a.correct).length;
     const percent = Math.round((correctCount / quizSession.questions.length) * 100);
-    area.innerHTML = `<section class="panel"><div class="panel-body" style="text-align:center;padding:48px 24px"><div style="font-size:72px">${percent>=80?'🏆':percent>=50?'🎉':'💪'}</div><h2 style="font-size:38px;margin:10px 0">遊戲完成！</h2><p style="color:var(--muted)">你答對了 ${correctCount} / ${quizSession.questions.length} 題</p><div class="stat-grid" style="max-width:650px;margin:28px auto"><div class="stat"><small>總分</small><strong>${quizSession.score}</strong></div><div class="stat"><small>正確率</small><strong>${percent}%</strong></div><div class="stat"><small>題目數</small><strong>${quizSession.questions.length}</strong></div></div><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><button class="btn btn-blue" id="playAgain">再玩一次</button><button class="btn btn-ghost" data-route="bank">管理題庫</button></div></div></section>`;
-    document.getElementById('playAgain').addEventListener('click', () => { document.getElementById('quizArea').innerHTML = renderQuizSetup(); bindQuizSetupControls(); });
+    area.innerHTML = `<section class="panel"><div class="panel-body" style="text-align:center;padding:48px 24px"><div style="font-size:72px">${percent>=80?'🏆':percent>=50?'🎉':'💪'}</div><h2 style="font-size:38px;margin:10px 0">遊戲完成！</h2><p style="color:var(--muted)">你答對了 ${correctCount} / ${quizSession.questions.length} 題</p><div class="stat-grid" style="max-width:650px;margin:28px auto"><div class="stat"><small>總分</small><strong>${quizSession.score}</strong></div><div class="stat"><small>正確率</small><strong>${percent}%</strong></div><div class="stat"><small>題目數</small><strong>${quizSession.questions.length}</strong></div></div><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap"><button class="btn btn-blue" id="playAgain">再玩一次</button><button class="btn btn-ghost" data-route="quizsettings">返回設定</button></div></div></section>`;
+    document.getElementById('playAgain').addEventListener('click', () => { ensureQuizSession(true); renderQuizQuestion(); });
     bindRouteActions();
     launchConfetti();
   }
@@ -609,6 +633,7 @@
         if (button.dataset.prepareTv === 'true') {
           try { prepareBigTvGame(false); } catch (error) { console.warn('Unable to persist game preparation', error); }
         }
+        if (button.dataset.route === 'quiz') ensureQuizSession(true);
         setRoute(button.dataset.route);
       });
     });
@@ -616,7 +641,13 @@
 
   function bindHome() {}
 
-  function bindWheel() {
+  function bindWheelPlay() {
+    renderWheelDisc();
+    document.getElementById('spinWheel')?.addEventListener('click', spinWheel);
+    document.getElementById('resetDraws')?.addEventListener('click', () => { state.drawnIds=[]; saveState(); toast('已重設已抽名單。'); render(); });
+  }
+
+  function bindWheelSettings() {
     renderWheelDisc();
     ['requireAttendance','requireTask','minPointsEnabled','allowRepeat'].forEach((id) => {
       document.getElementById(id)?.addEventListener('change', (event) => {
@@ -707,7 +738,17 @@
 
   function closeModal() { modalLayer.innerHTML=''; renderWheelDisc(); }
 
-  function bindQuiz() {
+  function bindQuizPlay() {
+    if (!quizSession) {
+      toast('請先建立題目。');
+      setRoute('bank');
+      return;
+    }
+    renderQuizQuestion();
+    document.getElementById('restartQuiz')?.addEventListener('click', () => { ensureQuizSession(true); renderQuizQuestion(); });
+  }
+
+  function bindQuizSettings() {
     bindQuizSetupControls();
     document.getElementById('startQuizHead')?.addEventListener('click', startQuiz);
   }
