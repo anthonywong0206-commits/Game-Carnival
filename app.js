@@ -41,6 +41,10 @@
   let wheelRotation = 0;
   let quizSession = null;
   let quizTimer = null;
+  let participantPage = 0;
+  let bankPage = 0;
+  const PARTICIPANTS_PER_PAGE = 5;
+  const QUESTIONS_PER_PAGE = 4;
 
   function loadState() {
     try {
@@ -178,7 +182,7 @@
               <div class="divider"></div>
               <div><strong>合資格名單</strong><div class="eligible-list" id="eligibleList" style="margin-top:10px">${renderEligibleChips(eligible)}</div></div>
             </div></section>
-            <section class="panel"><div class="panel-header"><h2>參加者名單</h2><button class="btn btn-small btn-blue" id="addParticipant">＋ 新增</button></div><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>姓名</th><th>出席</th><th>完成任務</th><th>積分</th><th></th></tr></thead><tbody>${renderParticipantRows()}</tbody></table></div></div></section>
+            <section class="panel participant-panel"><div class="panel-header"><div><h2>參加者名單</h2><p class="help-text">每頁 ${PARTICIPANTS_PER_PAGE} 人，避免頁面出現捲動列。</p></div><div class="panel-tools"><div class="pager compact"><button class="icon-mini" id="participantPrev" title="上一頁">‹</button><span>${participantPage + 1} / ${Math.max(1, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE))}</span><button class="icon-mini" id="participantNext" title="下一頁">›</button></div><button class="btn btn-small btn-blue" id="addParticipant">＋ 新增</button></div></div><div class="panel-body"><div class="table-wrap participant-table"><table><thead><tr><th>姓名</th><th>出席</th><th>完成任務</th><th>積分</th><th></th></tr></thead><tbody>${renderParticipantRows()}</tbody></table></div></div></section>
           </aside>
         </div>
       </div>`;
@@ -189,7 +193,11 @@
   }
 
   function renderParticipantRows() {
-    return state.participants.map((p) => `<tr data-participant-row="${p.id}"><td><input class="input participant-name" value="${escapeHtml(p.name)}" aria-label="姓名"></td><td><input class="participant-attended" type="checkbox" ${p.attended ? 'checked' : ''} aria-label="出席"></td><td><input class="participant-task" type="checkbox" ${p.taskDone ? 'checked' : ''} aria-label="完成任務"></td><td><input class="input participant-points" type="number" min="0" value="${p.points}" aria-label="積分"></td><td><button class="icon-mini delete-participant" title="刪除">✕</button></td></tr>`).join('');
+    const pageCount = Math.max(1, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE));
+    participantPage = clamp(participantPage, 0, pageCount - 1);
+    const start = participantPage * PARTICIPANTS_PER_PAGE;
+    const rows = state.participants.slice(start, start + PARTICIPANTS_PER_PAGE);
+    return rows.map((p) => `<tr data-participant-row="${p.id}"><td><input class="input participant-name" value="${escapeHtml(p.name)}" aria-label="姓名"></td><td><input class="participant-attended" type="checkbox" ${p.attended ? 'checked' : ''} aria-label="出席"></td><td><input class="participant-task" type="checkbox" ${p.taskDone ? 'checked' : ''} aria-label="完成任務"></td><td><input class="input participant-points" type="number" min="0" value="${p.points}" aria-label="積分"></td><td><button class="icon-mini delete-participant" title="刪除">✕</button></td></tr>`).join('') || '<tr><td colspan="5"><div class="empty-state">尚未有參加者。</div></td></tr>';
   }
 
   function renderEligibleChips(list) {
@@ -322,16 +330,16 @@
   function renderBank() {
     return `
       <div class="panel-page">
-        <div class="page-head"><div><h1>📚 題庫管理</h1><p>支援逐題新增、批量文字輸入、Excel／CSV 匯入及題庫匯出。</p></div><div class="page-head-actions"><button class="btn btn-ghost" id="downloadTemplate">下載 Excel 範本</button><button class="btn btn-primary" id="exportQuestions">匯出目前題庫</button></div></div>
-        <div class="stack">
-          <section class="panel"><div class="panel-header"><div><h2>新增及匯入題目</h2><p class="help-text">Excel 欄位：題目、選項A、選項B、選項C、選項D、正確答案、分數、解說</p></div></div><div class="panel-body stack">
+        <div class="page-head"><div><h1>📚 題庫管理</h1><p>支援逐題新增、批量文字輸入、Excel／CSV 匯入及題庫匯出。</p></div><div class="page-head-actions"><a class="btn btn-ghost" id="downloadTemplate" href="./question-bank-template.xlsx" download="題庫匯入範本.xlsx">下載 Excel 範本</a><button class="btn btn-primary" id="exportQuestions">匯出目前題庫</button></div></div>
+        <div class="stack bank-layout">
+          <section class="panel import-panel"><div class="panel-header"><div><h2>新增及匯入題目</h2><p class="help-text">Excel 欄位：題目、選項A、選項B、選項C、選項D、正確答案、分數、解說</p></div></div><div class="panel-body stack">
             <div class="import-tabs" role="tablist"><button class="import-tab is-active" data-import-tab="manual">逐題新增</button><button class="import-tab" data-import-tab="bulk">批量輸入</button><button class="import-tab" data-import-tab="excel">Excel / CSV</button></div>
             <div class="import-pane is-active" data-import-pane="manual">${manualQuestionForm()}</div>
             <div class="import-pane" data-import-pane="bulk">${bulkImportForm()}</div>
             <div class="import-pane" data-import-pane="excel">${excelImportForm()}</div>
             <div class="import-report" id="importReport"></div>
           </div></section>
-          <section class="panel"><div class="panel-header"><div><h2>目前題庫</h2><p class="help-text">共 ${state.questions.length} 題，可直接修改或刪除。</p></div><button class="btn btn-small btn-ghost" id="clearQuestions">清空題庫</button></div><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>#</th><th>題目</th><th>正確答案</th><th>分數</th><th>解說</th><th></th></tr></thead><tbody>${renderQuestionRows()}</tbody></table></div></div></section>
+          <section class="panel question-panel"><div class="panel-header"><div><h2>目前題庫</h2><p class="help-text">共 ${state.questions.length} 題，每頁 ${QUESTIONS_PER_PAGE} 題。</p></div><div class="panel-tools"><div class="pager"><button class="icon-mini" id="questionPrev" title="上一頁">‹</button><span>${bankPage + 1} / ${Math.max(1, Math.ceil(state.questions.length / QUESTIONS_PER_PAGE))}</span><button class="icon-mini" id="questionNext" title="下一頁">›</button></div><button class="btn btn-small btn-ghost" id="clearQuestions">清空題庫</button></div></div><div class="panel-body"><div class="table-wrap question-table"><table><thead><tr><th>#</th><th>題目</th><th>正確答案</th><th>分數</th><th>解說</th><th></th></tr></thead><tbody>${renderQuestionRows()}</tbody></table></div></div></section>
         </div>
       </div>`;
   }
@@ -349,7 +357,11 @@
   }
 
   function renderQuestionRows() {
-    return state.questions.map((q,index)=>`<tr data-question-row="${q.id}"><td>${index+1}</td><td><strong>${escapeHtml(q.question)}</strong><div class="help-text" style="margin-top:5px">${q.options.map((o,i)=>`${String.fromCharCode(65+i)}. ${escapeHtml(o)}`).join('　')}</div></td><td>${String.fromCharCode(65+q.answer)}. ${escapeHtml(q.options[q.answer])}</td><td>${q.score||100}</td><td>${escapeHtml(q.explanation||'—')}</td><td><div class="row-actions"><button class="icon-mini edit-question" title="編輯">✎</button><button class="icon-mini delete-question" title="刪除">✕</button></div></td></tr>`).join('') || '<tr><td colspan="6"><div class="empty-state">尚未有題目。請從上方新增或匯入。</div></td></tr>';
+    const pageCount = Math.max(1, Math.ceil(state.questions.length / QUESTIONS_PER_PAGE));
+    bankPage = clamp(bankPage, 0, pageCount - 1);
+    const start = bankPage * QUESTIONS_PER_PAGE;
+    const rows = state.questions.slice(start, start + QUESTIONS_PER_PAGE);
+    return rows.map((q,index)=>`<tr data-question-row="${q.id}"><td>${start+index+1}</td><td><strong>${escapeHtml(q.question)}</strong><div class="help-text question-options" style="margin-top:5px">${q.options.map((o,i)=>`${String.fromCharCode(65+i)}. ${escapeHtml(o)}`).join('　')}</div></td><td>${String.fromCharCode(65+q.answer)}. ${escapeHtml(q.options[q.answer])}</td><td>${q.score||100}</td><td class="question-explanation">${escapeHtml(q.explanation||'—')}</td><td><div class="row-actions"><button class="icon-mini edit-question" title="編輯">✎</button><button class="icon-mini delete-question" title="刪除">✕</button></div></td></tr>`).join('') || '<tr><td colspan="6"><div class="empty-state">尚未有題目。請從上方新增或匯入。</div></td></tr>';
   }
 
   function bindRouteActions() {
@@ -377,7 +389,9 @@
     document.getElementById('spinWheel')?.addEventListener('click', spinWheel);
     document.getElementById('spinFromHead')?.addEventListener('click', spinWheel);
     document.getElementById('resetDraws')?.addEventListener('click', () => { state.drawnIds=[]; saveState(); toast('已重設已抽名單。'); render(); });
-    document.getElementById('addParticipant')?.addEventListener('click', () => { state.participants.push({ id: crypto.randomUUID(), name: '新參加者', attended: true, taskDone: false, points: 0 }); saveState(); render(); });
+    document.getElementById('participantPrev')?.addEventListener('click', () => { participantPage = Math.max(0, participantPage - 1); render(); });
+    document.getElementById('participantNext')?.addEventListener('click', () => { const last = Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1); participantPage = Math.min(last, participantPage + 1); render(); });
+    document.getElementById('addParticipant')?.addEventListener('click', () => { state.participants.push({ id: crypto.randomUUID(), name: '新參加者', attended: true, taskDone: false, points: 0 }); participantPage = Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1); saveState(); render(); });
     document.querySelectorAll('[data-participant-row]').forEach((row) => bindParticipantRow(row));
   }
 
@@ -388,7 +402,7 @@
     row.querySelector('.participant-attended').addEventListener('change', (e) => { participant.attended=e.target.checked; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
     row.querySelector('.participant-task').addEventListener('change', (e) => { participant.taskDone=e.target.checked; saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
     row.querySelector('.participant-points').addEventListener('input', (e) => { participant.points=Number(e.target.value||0); saveState(); refreshWheelSidePanel(); renderWheelDisc(); });
-    row.querySelector('.delete-participant').addEventListener('click', () => { state.participants=state.participants.filter((p)=>p.id!==participant.id); state.drawnIds=state.drawnIds.filter((id)=>id!==participant.id); saveState(); render(); });
+    row.querySelector('.delete-participant').addEventListener('click', () => { state.participants=state.participants.filter((p)=>p.id!==participant.id); state.drawnIds=state.drawnIds.filter((id)=>id!==participant.id); participantPage = Math.min(participantPage, Math.max(0, Math.ceil(state.participants.length / PARTICIPANTS_PER_PAGE) - 1)); saveState(); render(); });
   }
 
   function refreshWheelSidePanel() {
@@ -471,14 +485,15 @@
     ['dragenter','dragover'].forEach(type=>dropzone?.addEventListener(type,(e)=>{e.preventDefault();dropzone.classList.add('is-dragging');}));
     ['dragleave','drop'].forEach(type=>dropzone?.addEventListener(type,(e)=>{e.preventDefault();dropzone.classList.remove('is-dragging');}));
     dropzone?.addEventListener('drop',(e)=>handleExcelFile(e.dataTransfer.files[0]));
-    document.getElementById('downloadTemplate')?.addEventListener('click',()=>downloadTemplate());
     document.getElementById('exportQuestions')?.addEventListener('click',()=>exportQuestions());
+    document.getElementById('questionPrev')?.addEventListener('click',()=>{ bankPage=Math.max(0,bankPage-1); render(); });
+    document.getElementById('questionNext')?.addEventListener('click',()=>{ const last=Math.max(0,Math.ceil(state.questions.length/QUESTIONS_PER_PAGE)-1); bankPage=Math.min(last,bankPage+1); render(); });
     document.getElementById('clearQuestions')?.addEventListener('click',()=>{
       if (confirm('確定清空全部題目？此動作不能復原。')) { state.questions=[]; saveState(); render(); }
     });
     document.querySelectorAll('[data-question-row]').forEach((row)=>{
       const question = state.questions.find(q=>q.id===row.dataset.questionRow);
-      row.querySelector('.delete-question').addEventListener('click',()=>{ state.questions=state.questions.filter(q=>q.id!==question.id); saveState(); render(); });
+      row.querySelector('.delete-question').addEventListener('click',()=>{ state.questions=state.questions.filter(q=>q.id!==question.id); bankPage=Math.min(bankPage,Math.max(0,Math.ceil(state.questions.length/QUESTIONS_PER_PAGE)-1)); saveState(); render(); });
       row.querySelector('.edit-question').addEventListener('click',()=>openEditQuestion(question));
     });
   }
@@ -491,6 +506,7 @@
     const explanation = document.getElementById('manualExplanation').value.trim();
     if (!question || options.some(Boolean)===false || options.some(o=>!o)) { report([{type:'error',text:'請填寫題目及四個選項。'}]); return; }
     state.questions.push({ id: crypto.randomUUID(), question, options, answer, score, explanation });
+    bankPage = Math.max(0, Math.ceil(state.questions.length / QUESTIONS_PER_PAGE) - 1);
     saveState(); toast('題目已加入題庫。'); render();
   }
 
@@ -593,10 +609,43 @@
     if(cell.length||row.length){row.push(cell);rows.push(row);} return rows;
   }
 
-  function downloadTemplate() {
+  async function downloadTemplate() {
+    const filename = '題庫匯入範本.xlsx';
+    const templateUrl = new URL('./question-bank-template.xlsx', window.location.href);
+    try {
+      const response = await fetch(templateUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      triggerDownload(objectUrl, filename);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1200);
+      toast('Excel 題庫範本已開始下載。');
+      return;
+    } catch (error) {
+      console.warn('Static template download failed; using generated fallback.', error);
+    }
+
+    const rows = [
+      ['題目','選項A','選項B','選項C','選項D','正確答案','分數','解說'],
+      ['香港最高的山峰是哪一座？','太平山','大帽山','獅子山','鳳凰山','B',100,'大帽山是香港最高峰。']
+    ];
+    if (window.XLSX) {
+      const sheet = XLSX.utils.aoa_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, sheet, '題庫');
+      XLSX.writeFile(workbook, filename);
+      toast('Excel 題庫範本已重新產生並下載。');
+      return;
+    }
+    downloadCsv(rows, '題庫匯入範本.csv');
+    toast('Excel 程式庫未載入，已改為下載可直接用 Excel 開啟的 CSV 範本。');
+  }
+
+  function triggerDownload(url, filename) {
     const link = document.createElement('a');
-    link.href = './題庫匯入範本.xlsx';
-    link.download = '題庫匯入範本.xlsx';
+    link.href = url;
+    link.download = filename;
+    link.rel = 'noopener';
     document.body.appendChild(link);
     link.click();
     link.remove();
