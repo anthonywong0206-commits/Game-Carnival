@@ -135,83 +135,137 @@
   }
 
   function renderHome() {
+    const eligibleCount = getEligibleParticipants().length;
+    const featureCards = [
+      ['📤', '題庫匯入', '快速匯入題庫，節省活動準備時間。', 'violet'],
+      ['📊', 'Excel / CSV', '支援表格檔案匯入，資料管理更輕鬆。', 'green'],
+      ['👥', '分組比賽', '設定隊伍與同場競賽，提升參與感。', 'orange'],
+      ['🏆', '即時計分板', '同步顯示分數與排名，賽況一目了然。', 'blue'],
+      ['▦', '分割畫面', '大電視多組畫面模式，主持更靈活。', 'teal'],
+      ['🎉', '嘉年華體驗', '繽紛動畫與音效，營造熱鬧活動氣氛。', 'pink']
+    ];
+    const upcomingTools = [
+      ['❓', '互動問答箱', '匿名提問、投票與即時回饋。', 'purple'],
+      ['⏱️', '小組計時器', '倒數計時、提醒與活動節奏控制。', 'amber'],
+      ['⭐', '任務挑戰卡', '建立任務及挑戰，增加互動與投入。', 'green'],
+      ['📈', '結果統計', '整理活動數據及成效，方便回顧。', 'blue']
+    ];
+
     return `
-      <div class="page">
-        <section class="hero" aria-labelledby="heroTitle">
-          <div class="carnival-lights"></div><div class="bunting"></div>
-          <div class="hero-grid">
-            <div class="hero-copy">
-              <h1 id="heroTitle">小組活動<span>綜合平台</span></h1>
-              <p>把抽獎、問答與題庫管理集中在一個有趣又易用的平台，讓每一次小組活動都更有氣氛、更有參與感。</p>
-              <div class="hero-actions">
-                <button class="btn btn-primary" data-route="wheel">🎡 立即玩抽獎輪盤</button>
-                <button class="btn btn-ghost" data-route="bank">📚 建立題庫</button>
+      <div class="home-modern">
+        <section class="home-hero" aria-labelledby="homeHeroTitle">
+          <div class="home-confetti" aria-hidden="true"></div>
+          <div class="home-hero-inner">
+            <div class="home-hero-copy">
+              <h1 id="homeHeroTitle">讓小組活動<span>更有氣氛、更易管理</span></h1>
+              <p>一站式整合抽獎、互動、計分與管理工具，讓每場活動都更流暢、更精彩。</p>
+              <div class="home-hero-actions">
+                <button class="home-btn home-btn-primary" data-route="wheel">立即開始 <span aria-hidden="true">✦</span></button>
+                <button class="home-btn home-btn-outline" data-scroll-target="homeTools">查看工具 <span aria-hidden="true">↓</span></button>
               </div>
             </div>
-            <div class="hero-visual" aria-hidden="true">
-              <div class="ferris"></div>
-              <div class="ringmaster">🐶</div>
+            <div class="home-hero-art" aria-hidden="true">
+              <div class="hero-ferris-modern"><span></span><span></span><span></span><span></span></div>
+              <div class="hero-stage-modern">
+                <div class="hero-stage-lights"></div>
+                <div class="hero-dog-modern">🐶</div>
+                <div class="hero-clown-modern">🤡</div>
+              </div>
             </div>
           </div>
+          <div class="home-hero-wave" aria-hidden="true"></div>
         </section>
 
-        <section class="section" aria-labelledby="toolsHeading">
-          <div class="section-heading"><div><h2 id="toolsHeading">熱門工具・第一階段</h2><p>三個核心工具已可直接使用及設定。</p></div></div>
-          <div class="tool-grid">
-            <article class="tool-card">
-              <div class="card-title-row">
-                <div class="card-title"><span class="number-badge">1</span><div><h3>抽獎輪盤</h3><p>精美動畫 × 條件抽選</p></div></div>
-                <div class="tags"><span class="tag coral">嘉年華動畫</span><span class="tag gold">公平抽選</span></div>
-              </div>
-              <div class="preview-stage">
-                <div class="wheel-preview">
-                  <div class="mini-wheel"></div>
-                  <div class="condition-board"><strong>抽獎條件</strong><span>✓ 出席者</span><span>✓ 完成任務</span><span>✓ 積分達標</span><span>符合人數：${getEligibleParticipants().length} 人</span></div>
-                </div>
-              </div>
-              <div class="card-actions"><button class="btn btn-coral" data-route="wheel">▶ 進入</button><button class="btn btn-ghost" data-route="wheelsettings">⚙ 設定</button></div>
-            </article>
+        <main class="home-content">
+          <section class="home-section" id="homeTools" aria-labelledby="homeToolsHeading">
+            <div class="home-section-heading">
+              <div class="home-heading-icon crown">♛</div>
+              <div><h2 id="homeToolsHeading">主要工具</h2><p>選擇遊戲直接開始，或先進入設定調整活動內容。</p></div>
+            </div>
 
-            <article class="tool-card is-blue">
-              <div class="card-title-row">
-                <div class="card-title"><span class="number-badge">2</span><div><h3>多項選擇遊戲</h3><p>即時計分 × 題目管理</p></div></div>
-                <div class="tags"><span class="tag green">即時計分</span><span class="tag">Excel 匯入</span></div>
-              </div>
-              <div class="preview-stage blue">
-                <div class="quiz-preview">
-                  <div class="quiz-toolbar"><span>第 2 題 / 共 ${state.questions.length} 題</span><span>00:15</span><span>⭐ 120</span></div>
-                  <div class="quiz-preview-panel"><h4>香港最高的山峰是哪一座？</h4><div class="answer-grid"><div class="answer-chip">A 太平山</div><div class="answer-chip correct">B 大帽山 ✓</div><div class="answer-chip">C 獅子山</div><div class="answer-chip">D 鳳凰山</div></div></div>
+            <div class="home-tools-grid">
+              <article class="home-tool-card wheel-card">
+                <div class="home-tool-copy">
+                  <div class="home-tool-title"><span class="home-tool-icon">🎡</span><h3>抽獎輪盤</h3></div>
+                  <p>自訂名單及抽選條件，帶來公平又充滿驚喜的抽獎體驗。</p>
+                  <div class="home-tool-stats"><span>${eligibleCount} 位合資格參加者</span><span>動畫抽選</span></div>
                 </div>
-              </div>
-              <div class="card-actions"><button class="btn btn-blue" data-route="quiz">▶ 進入</button><button class="btn btn-ghost" data-route="quizsettings">⚙ 設定</button></div>
-            </article>
+                <div class="home-tool-preview wheel-home-preview" aria-hidden="true">
+                  <div class="home-preview-frame"><div class="home-preview-wheel"><span>開始</span></div></div>
+                </div>
+                <div class="home-tool-actions">
+                  <button class="home-tool-enter purple" data-route="wheel">進入遊戲 <span>▶</span></button>
+                  <button class="home-tool-settings" data-route="wheelsettings">設定 <span>⚙</span></button>
+                </div>
+              </article>
 
-            <article class="tool-card is-purple">
-              <div class="card-title-row">
-                <div class="card-title"><span class="number-badge">3</span><div><h3>大電視動作猜估</h3><p>看題目 × 做動作 × 隊友猜答案</p></div></div>
-                <div class="tags"><span class="tag gold">多人競賽</span><span class="tag green">分割畫面</span></div>
-              </div>
-              <div class="preview-stage purple">
-                <div class="tv-card-preview">
-                  <div class="tv-card-banner">大電視</div>
-                  <div class="tv-card-question">題目：打羽毛球</div>
-                  <div class="tv-card-scoreboard">${renderBigTvTeamStrip()}</div>
+              <article class="home-tool-card quiz-card">
+                <div class="home-tool-copy">
+                  <div class="home-tool-title"><span class="home-tool-icon pink">☷</span><h3>多項選擇</h3></div>
+                  <p>建立互動問答及計時挑戰，完成後即時顯示分數與答案。</p>
+                  <div class="home-tool-stats"><span>${state.questions.length} 道題目</span><span>即時計分</span></div>
                 </div>
-              </div>
-              <div class="card-actions"><button class="btn btn-dark" data-route="tvplay" data-prepare-tv="true">▶ 進入遊戲</button><button class="btn btn-ghost" data-route="tv">⚙ 設定</button></div>
-            </article>
+                <div class="home-tool-preview quiz-home-preview" aria-hidden="true">
+                  <div class="home-quiz-mini">
+                    <strong>你最喜歡的活動是？</strong>
+                    <div><span>A 旅遊</span><i style="--w:82%"></i><b>42</b></div>
+                    <div><span>B 電影</span><i style="--w:68%"></i><b>35</b></div>
+                    <div><span>C 美食</span><i style="--w:52%"></i><b>28</b></div>
+                    <div><span>D 運動</span><i style="--w:35%"></i><b>15</b></div>
+                  </div>
+                </div>
+                <div class="home-tool-actions">
+                  <button class="home-tool-enter pink" data-route="quiz">進入遊戲 <span>▶</span></button>
+                  <button class="home-tool-settings" data-route="quizsettings">設定 <span>⚙</span></button>
+                </div>
+              </article>
+
+              <article class="home-tool-card tv-card">
+                <div class="home-tool-copy">
+                  <div class="home-tool-title"><span class="home-tool-icon blue">▣</span><h3>大電視動作猜估</h3></div>
+                  <p>看題目、做動作、由隊友猜答案，支援多組同場比賽。</p>
+                  <div class="home-tool-stats"><span>${state.bigTvSettings.teamCount} 組模式</span><span>分割畫面</span></div>
+                </div>
+                <div class="home-tool-preview tv-home-preview" aria-hidden="true">
+                  <div class="home-tv-mini"><div class="home-tv-lights"></div><strong>比手畫腳<br>猜一猜！</strong><div class="home-tv-people">♟ ♟ ♟</div></div>
+                </div>
+                <div class="home-tool-actions">
+                  <button class="home-tool-enter blue" data-route="tvplay" data-prepare-tv="true">進入遊戲 <span>▶</span></button>
+                  <button class="home-tool-settings" data-route="tv">設定 <span>⚙</span></button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="home-section compact" aria-labelledby="homeFeaturesHeading">
+            <div class="home-section-heading small">
+              <div class="home-heading-icon dots">✣</div>
+              <div><h2 id="homeFeaturesHeading">熱門功能</h2><p>從準備題目到比賽展示，一個平台完成。</p></div>
+            </div>
+            <div class="home-feature-grid">
+              ${featureCards.map(([icon, title, description, tone]) => `<article class="home-feature-card ${tone}"><span class="feature-icon">${icon}</span><div><h3>${title}</h3><p>${description}</p></div></article>`).join('')}
+            </div>
+          </section>
+
+          <section class="home-section compact upcoming-section" aria-labelledby="homeUpcomingHeading">
+            <div class="home-section-heading small">
+              <div class="home-heading-icon tent">🎪</div>
+              <div><h2 id="homeUpcomingHeading">更多工具 / 即將推出</h2><p>平台會持續加入更多小組帶領與活動管理工具。</p></div>
+            </div>
+            <div class="home-upcoming-grid">
+              ${upcomingTools.map(([icon, title, description, tone]) => `<article class="home-upcoming-card ${tone}"><span class="upcoming-badge">即將推出</span><span class="upcoming-icon">${icon}</span><div><h3>${title}</h3><p>${description}</p></div></article>`).join('')}
+            </div>
+          </section>
+        </main>
+
+        <footer class="home-footer">
+          <div class="home-footer-inner">
+            <div class="footer-brand"><span class="footer-brand-icon">🎪</span><div><strong>小組活動綜合平台</strong><p>讓活動更有趣，讓管理更簡單。</p></div></div>
+            <div class="footer-links"><div><strong>平台</strong><button data-route="home">首頁</button><button data-scroll-target="homeTools">所有工具</button><button data-route="bank">題庫管理</button></div><div><strong>支援</strong><span>使用教學</span><span>常見問題</span><span>聯絡我們</span></div><div><strong>關於我們</strong><span>關於平台</span><span>私隱政策</span><span>服務條款</span></div></div>
+            <div class="footer-newsletter"><strong>訂閱最新消息</strong><p>獲得新功能與活動小秘訣。</p><div><input type="email" aria-label="電子郵件" placeholder="輸入您的電子郵件"><button type="button" id="subscribeHome">訂閱</button></div></div>
           </div>
-        </section>
-
-        <section class="section">
-          <div class="section-heading"><div><h2>更多好玩工具</h2><p>已預留同一設計系統，方便日後擴充。</p></div></div>
-          <div class="quick-tools">
-            ${quickTool('❓','互動問答箱','匿名提問、投票及即時回饋。')}
-            ${quickTool('⏱️','小組計時器','倒數、分組競賽及活動節奏控制。')}
-            ${quickTool('🎯','任務挑戰卡','建立任務、完成條件及小組挑戰。')}
-            ${quickTool('📊','結果統計','整理答題結果及活動成效。')}
-          </div>
-        </section>
+          <div class="home-footer-bottom">© 2026 小組活動綜合平台・保留所有權利</div>
+        </footer>
       </div>`;
   }
 
@@ -639,7 +693,18 @@
     });
   }
 
-  function bindHome() {}
+  function bindHome() {
+    document.querySelectorAll('[data-scroll-target]').forEach((button) => {
+      button.addEventListener('click', () => document.getElementById(button.dataset.scrollTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    });
+    document.getElementById('subscribeHome')?.addEventListener('click', () => {
+      const input = document.querySelector('.footer-newsletter input');
+      const email = input?.value.trim() || '';
+      if (!email || !email.includes('@')) { toast('請輸入有效的電子郵件地址。'); return; }
+      input.value = '';
+      toast('已記錄你的訂閱意向。');
+    });
+  }
 
   function bindWheelPlay() {
     renderWheelDisc();
